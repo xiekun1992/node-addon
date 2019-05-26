@@ -1,4 +1,5 @@
 const screenshot = require('./build/Release/screenshot.node')
+const zlib = require('zlib')
 const {
     performance
 } = require('perf_hooks')
@@ -13,15 +14,22 @@ let buf = Buffer.from(screenshot.getBitmap())
 console.log(buf.length)
 let buf2 = Buffer.alloc(buf.length);
 console.log(buf2.length)
-setInterval(() => {
-    // let s = performance.now()
-    let buf1 = Buffer.from(screenshot.getBitmap())
-    console.log(buf1.length)
-    // console.log(performance.now() - s)
-    for (let i = 0; i < buf.length; i++) {
-        buf2[i] = buf1[i] - buf[i]
-    }
-    buf = buf1;
-}, 1000 / 24)
+// setTimeout(() => {
+
+    setInterval(() => {
+        // let s = performance.now()
+        let buf1 = Buffer.from(screenshot.getBitmap())
+        // console.log(buf1.length)
+        // console.log(performance.now() - s)
+        for (let i = 0; i < buf.length; i++) {
+            buf2[i] = buf1[i] - buf[i]
+        }
+        buf = buf1;
+        // console.log(buf2)
+        zlib.gzip(buf2,  (err, res) => {
+            console.log(res.length)
+        });
+    }, 1000 / 24)
+// }, 3000)
 // console.log(performance.now() - s)
 // console.log(buf2)

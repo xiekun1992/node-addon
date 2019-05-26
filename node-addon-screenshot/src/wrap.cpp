@@ -5,7 +5,7 @@ Napi::Value wrap::getBitmap(const Napi::CallbackInfo& info) {
     BYTE* bytes = screenshot::getBitmap();
     Napi::Buffer<BYTE> buf = Napi::Buffer<BYTE>::New(env, bytes, 1600 * 900);
     // Napi::Value buf = info[0].As<Napi::Number>();
-    free(bytes);
+    // free(bytes);
     return buf;
 }
 Napi::String wrap::hello(const Napi::CallbackInfo& info) {

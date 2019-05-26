@@ -5,13 +5,14 @@ using namespace std;
 using namespace std::chrono;
 
 
-BYTE* ScreenDataTmp = NULL;
+int SX = 1600, SY = 900;
+int ScreenX = SX;
+int ScreenY = SY;
+// BYTE* ScreenDataTmp = NULL;
+BYTE* ScreenDataTmp = (BYTE*)malloc(4 * ScreenX * ScreenY);
 // BYTE* ScreenData = 0;
 
 BYTE* screenshot::getBitmap() {
-	int SX = 1600, SY = 900;
-	int ScreenX = SX;
-	int ScreenY = SY;
 	
     // copy screen to bitmap
 	HDC     hScreen = GetDC(NULL);
@@ -36,7 +37,7 @@ BYTE* screenshot::getBitmap() {
 	bmi.biClrUsed = 0;
 	bmi.biClrImportant = 0;
 	
-	BYTE* ScreenDataTmp = (BYTE*)malloc(4 * ScreenX * ScreenY);
+	
 	// BYTE* ScreenDataTmp = (BYTE*)malloc(4 * ScreenX * ScreenY);
 	// data include rgba stored in ScreenData
 	GetDIBits(hDC, hBitmap, 0, ScreenY, ScreenDataTmp, (BITMAPINFO*)& bmi, DIB_RGB_COLORS);
