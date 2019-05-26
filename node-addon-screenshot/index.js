@@ -4,20 +4,24 @@ const {
 } = require('perf_hooks')
 
 console.log(screenshot.hello())
-let s = performance.now()
+// let s = performance.now()
 // for (let i = 0; i < 24; i++) {
 //     screenshot.getBitmap()
 // }
 // console.log(performance.now() - s)
-let buf = screenshot.getBitmap()
-// setInterval(() => {
+let buf = Buffer.from(screenshot.getBitmap())
+console.log(buf.length)
+let buf2 = Buffer.alloc(buf.length);
+console.log(buf2.length)
+setInterval(() => {
     // let s = performance.now()
-    let buf1 = screenshot.getBitmap()
+    let buf1 = Buffer.from(screenshot.getBitmap())
+    console.log(buf1.length)
     // console.log(performance.now() - s)
-// }, 1000 / 24)
-let buf2 = Buffer.alloc(buf1.length);
-for (let i = 0; i < buf.length; i++) {
-    buf2[i] = buf1[i] - buf[i]
-}
-console.log(performance.now() - s)
-console.log(buf2)
+    for (let i = 0; i < buf.length; i++) {
+        buf2[i] = buf1[i] - buf[i]
+    }
+    buf = buf1;
+}, 1000 / 24)
+// console.log(performance.now() - s)
+// console.log(buf2)
