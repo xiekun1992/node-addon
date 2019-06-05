@@ -1,6 +1,6 @@
 #include "ffmpeg-video.h"
 
-void SaveFrame(AVFrame* pFrame, int width, int height, int iFrame) {
+void ffmpeg::SaveFrame(AVFrame* pFrame, int width, int height, int iFrame) {
 	FILE* pFile;
 	char szFilename[32];
 	int y;
@@ -16,7 +16,7 @@ void SaveFrame(AVFrame* pFrame, int width, int height, int iFrame) {
 	fclose(pFile);
 }
 
-int extractFrame() {
+int ffmpeg::extractFrame() {
 	AVFormatContext* pFormatCtx = NULL;
 	const char* filename = "D:\\Wildlife.wmv";
 	AVCodecContext* pCodecCtxOrig = NULL;
