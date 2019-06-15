@@ -10,5 +10,8 @@ extern "C" {
 
 namespace ffmpeg {
     void SaveFrame(AVFrame* pFrame, int width, int height, int iFrame);
-    int extractFrame();
+    uint8_t* extractRGB(AVFrame* frame, int width, int height);
+    uint8_t* extractFrame();
+    bool config();
+    void clean();
 }
