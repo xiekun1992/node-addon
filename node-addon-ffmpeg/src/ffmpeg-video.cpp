@@ -1,5 +1,6 @@
 #include "ffmpeg-video.h"
 
+
 AVFormatContext* pFormatCtx = NULL;
 const char* filename = "D:\\Wildlife.wmv";
 AVCodecContext* pCodecCtxOrig = NULL;
@@ -11,6 +12,7 @@ AVFrame* pFrame = NULL;
 AVFrame* pFrameRGB = NULL;
 struct SwsContext* sws_ctx = NULL;
 int numBytes = 0;
+
 
 void ffmpeg::SaveFrame(AVFrame* pFrame, int width, int height, int iFrame) {
 	FILE* pFile;
@@ -42,7 +44,7 @@ uint8_t* ffmpeg::extractRGB(AVFrame* frame, int width, int height) {
 	return buf;
 }
 
-bool ffmpeg::config() {
+bool ffmpeg::config(VideoParams* videoParams) {
 	if (avformat_open_input(&pFormatCtx, filename, NULL, NULL) < 0) {
 		return false;
 	}
@@ -58,8 +60,11 @@ bool ffmpeg::config() {
 	if (videoStream == -1) {
 		return false;
 	}
-	// // printf("11111\n");
+
 	pCodecCtx = pFormatCtx->streams[videoStream]->codec;
+	videoParams->fps = av_q2d(pFormatCtx->streams[videoStream]->avg_frame_rate);
+	videoParams->width = pCodecCtx->width;
+	videoParams->height = pCodecCtx->height;
 	// pCodecCtx = avcodec_alloc_context3(NULL);
 	if (avcodec_parameters_to_context(pCodecCtx, pFormatCtx->streams[videoStream]->codecpar) < 0) {
 		return false;
@@ -105,7 +110,7 @@ uint8_t* ffmpeg::extractFrame() {
 					break;
 			}
 		}
-		av_free_packet(&packet);
+		// av_free_packet(&packet);
 	}
 	return buffer;
 }
