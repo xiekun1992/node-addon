@@ -2,7 +2,7 @@
 
 
 AVFormatContext* pFormatCtx = NULL;
-const char* filename = "D:\\Wildlife.wmv";
+// const char* filename = "";
 AVCodecContext* pCodecCtxOrig = NULL;
 AVCodecContext* pCodecCtx = NULL;
 int videoStream = -1;
@@ -44,7 +44,7 @@ uint8_t* ffmpeg::extractRGB(AVFrame* frame, int width, int height) {
 	return buf;
 }
 
-bool ffmpeg::config(VideoParams* videoParams) {
+bool ffmpeg::config(VideoParams* videoParams, const char* filename) {
 	if (avformat_open_input(&pFormatCtx, filename, NULL, NULL) < 0) {
 		return false;
 	}

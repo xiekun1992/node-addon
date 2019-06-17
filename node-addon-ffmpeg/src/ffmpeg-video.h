@@ -20,7 +20,7 @@ namespace ffmpeg {
     void SaveFrame(AVFrame* pFrame, int width, int height, int iFrame);
     uint8_t* extractRGB(AVFrame* frame, int width, int height);
     uint8_t* extractFrame();
-    bool config(VideoParams* videoParams);
+    bool config(VideoParams* videoParams, const char* filename);
     void clean();
 }
 

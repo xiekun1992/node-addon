@@ -11,7 +11,8 @@ Napi::Value wrap::extractFramew(const Napi::CallbackInfo& info) {
 
 Napi::Object wrap::config(const Napi::CallbackInfo& info) {
     Napi::Env env = info.Env();
-    bool res = ffmpeg::config(&params);
+    std::string filename = info[0].As<Napi::String>().ToString();
+    bool res = ffmpeg::config(&params, filename.c_str());
     Napi::Object obj = Napi::Object::New(env);
     if (res) {
         obj.Set("fps", params.fps);
