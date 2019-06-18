@@ -18,6 +18,11 @@ Napi::Object wrap::config(const Napi::CallbackInfo& info) {
         obj.Set("fps", params.fps);
         obj.Set("width", params.width);
         obj.Set("height", params.height);
+        obj.Set("iformatName", params.iformatName);
+        obj.Set("filename", params.filename);
+        obj.Set("duration", params.duration);
+        obj.Set("start", params.start);
+        obj.Set("bitrate", params.bitrate);
     }
     return obj;
 }

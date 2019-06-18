@@ -43,7 +43,28 @@ uint8_t* ffmpeg::extractRGB(AVFrame* frame, int width, int height) {
 	}
 	return buf;
 }
-
+void ffmpeg::getVideoInfo(AVFormatContext* pFormatCtx, AVCodecContext* pCodecCtx, int videoStream, VideoParams* videoParams) {
+	videoParams->fps = round(av_q2d(pFormatCtx->streams[videoStream]->avg_frame_rate) * 100) / 100;
+	videoParams->width = pCodecCtx->width;
+	videoParams->height = pCodecCtx->height;
+	videoParams->iformatName = pFormatCtx->iformat->name;
+	
+	int64_t duration = pFormatCtx->duration + (pFormatCtx->duration <= INT64_MAX - 5000 ? 5000 : 0);
+	videoParams->duration = duration / 1000; // ms
+	// int secs = duration / AV_TIME_BASE;
+	// int us = duration % AV_TIME_BASE;
+	// int mins = secs / 60;
+	// secs %= 60;
+	// int hours = mins / 60;
+	// mins %= 60;
+	if (pFormatCtx->start_time != AV_NOPTS_VALUE) {
+		videoParams->start = pFormatCtx->start_time;
+		// int secs = llabs(pFormatCtx->start_time / AV_TIME_BASE);
+		// int us = llabs(pFormatCtx->start_time % AV_TIME_BASE);
+	}
+	// 比特率
+	if (pFormatCtx->bit_rate) videoParams->bitrate = pFormatCtx->bit_rate / 1000;
+}
 bool ffmpeg::config(VideoParams* videoParams, const char* filename) {
 	if (avformat_open_input(&pFormatCtx, filename, NULL, NULL) < 0) {
 		return false;
@@ -62,9 +83,9 @@ bool ffmpeg::config(VideoParams* videoParams, const char* filename) {
 	}
 
 	pCodecCtx = pFormatCtx->streams[videoStream]->codec;
-	videoParams->fps = av_q2d(pFormatCtx->streams[videoStream]->avg_frame_rate);
-	videoParams->width = pCodecCtx->width;
-	videoParams->height = pCodecCtx->height;
+
+	videoParams->filename = filename;
+	getVideoInfo(pFormatCtx, pCodecCtx, videoStream, videoParams);
 	// pCodecCtx = avcodec_alloc_context3(NULL);
 	if (avcodec_parameters_to_context(pCodecCtx, pFormatCtx->streams[videoStream]->codecpar) < 0) {
 		return false;
