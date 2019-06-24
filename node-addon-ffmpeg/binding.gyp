@@ -7,6 +7,7 @@
             "sources": [
                 "src/main.cpp",
                 "src/ffmpeg-video.cpp",
+                "src/ffmpeg-audio.cpp",
                 "src/wrap.cpp"
             ],
             "include_dirs": [
