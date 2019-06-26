@@ -13,5 +13,6 @@ struct AudioParams {
 };
 
 namespace audio {
+    bool init();
     bool decode(AudioParams* audioParams);
 }

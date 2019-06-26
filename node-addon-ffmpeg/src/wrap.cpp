@@ -34,7 +34,12 @@ Napi::Value wrap::clean(const Napi::CallbackInfo& info) {
     
 }
 
-
+Napi::Boolean wrap::initAudio(const Napi::CallbackInfo& info) {
+    Napi::Env env = info.Env();
+    bool res = audio::init();
+    Napi::Boolean b = Napi::Boolean::New(env, res);
+    return b;
+}
 Napi::Value wrap::decodeAudio(const Napi::CallbackInfo& info) {
     Napi::Env env = info.Env();
     bool res = audio::decode(&aParams);
@@ -48,6 +53,7 @@ Napi::Object wrap::init(Napi::Env env, Napi::Object exports) {
     exports.Set("config", Napi::Function::New(env, wrap::config));
     exports.Set("clean", Napi::Function::New(env, wrap::clean));
 
+    exports.Set("initAudio", Napi::Function::New(env, wrap::initAudio));
     exports.Set("decodeAudio", Napi::Function::New(env, wrap::decodeAudio));
     return exports;
 }

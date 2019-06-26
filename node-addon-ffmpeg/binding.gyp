@@ -5,6 +5,7 @@
             "cflags!": ["-fno-exceptions"],
             "cflags_cc!": ["-fno-exceptions"],
             "sources": [
+                "src/utils/packet-queue.cpp",
                 "src/main.cpp",
                 "src/ffmpeg-video.cpp",
                 "src/ffmpeg-audio.cpp",
