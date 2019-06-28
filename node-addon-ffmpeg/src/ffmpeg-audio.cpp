@@ -109,6 +109,7 @@ bool audio::decode(AudioParams* audioParams) {
 	if (gotFrame) {
 		int size = av_samples_get_buffer_size(NULL, frame->channels, frame->nb_samples, codecCtx->sample_fmt, 1);
 		int out_buffer_size = size / 2;
+		// interleaved 16bit pcm
 		swr_convert(au_convert_ctx, &out_buffer, MAX_AUDIO_FRAME_SIZE, (const uint8_t **)frame->data, frame->nb_samples);
 		
 		audioParams->size = out_buffer_size;
