@@ -43,8 +43,10 @@ Napi::Boolean wrap::initAudio(const Napi::CallbackInfo& info) {
 Napi::Value wrap::decodeAudio(const Napi::CallbackInfo& info) {
     Napi::Env env = info.Env();
     bool res = audio::decode(&aParams);
-    Napi::Buffer<uint8_t> b = Napi::Buffer<uint8_t>::New(env, aParams.buffer, aParams.size);
-    return b;
+    if (res) {
+        return Napi::Buffer<uint8_t>::New(env, aParams.buffer, aParams.size);
+    }
+    return env.Null();
 }
 
 
