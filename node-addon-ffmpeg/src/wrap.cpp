@@ -36,7 +36,8 @@ Napi::Value wrap::clean(const Napi::CallbackInfo& info) {
 
 Napi::Boolean wrap::initAudio(const Napi::CallbackInfo& info) {
     Napi::Env env = info.Env();
-    bool res = audio::init();
+    std::string filename = info[0].As<Napi::String>().ToString();
+    bool res = audio::init(filename.c_str());
     Napi::Boolean b = Napi::Boolean::New(env, res);
     return b;
 }

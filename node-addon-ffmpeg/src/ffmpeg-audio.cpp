@@ -10,13 +10,13 @@ struct SwrContext *au_convert_ctx;
 int audioIndex = -1;
 int gotFrame = 0;
 int oi = 0;
-const char* filename = "D:\\Wildlife.wmv";
+// const char* filename = "D:\\Wildlife.wmv";
 int64_t in_channel_layout;
 uint8_t	*out_buffer;
 
 utils::PacketQueue queue;
 
-bool audio::init() {
+bool audio::init(const char* filename) {
 
 	if (avformat_open_input(&fmtCtx, filename, NULL, NULL) < 0) {
 		return false;
