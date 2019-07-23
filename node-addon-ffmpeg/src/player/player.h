@@ -10,7 +10,6 @@ public:
 	Player();
 	~Player();
 
-	const char* filename = NULL;
 
 	void init(const char* filename);
 	map<string, map<string, string>> getInfo();
@@ -20,6 +19,12 @@ public:
 	void decodeAudio();
 	void decodeVideo();
 
+	const char* filename = NULL;
+	uint8_t* audioBuffer = NULL;// 每次解码后的音频数据
+	int audioBufferSize = 0;
+	int audioClock = 0;// 音频时钟
+	uint8_t* buffer = NULL;
+
 private:
 	AVFormatContext* audioFmtCtx = NULL;
 	PacketQueue audioQueue;
@@ -27,8 +32,6 @@ private:
 	AVCodec* audioCodec = NULL;
 	int audioStreamIndex = -1;
 	struct SwrContext* audioConvertCtx = NULL;
-	uint8_t* audioBuffer = NULL;// 每次解码后的音频数据
-	int audioClock = 0;// 音频时钟
 
 	AVFormatContext* videoFmtCtx = NULL;
 	PacketQueue videoQueue;
@@ -38,5 +41,4 @@ private:
 	AVFrame* videoFrame = NULL;
 	AVFrame* videoFrameRGB = NULL;
 	struct SwsContext* swsCtx = NULL;
-	uint8_t* buffer = NULL;
 };

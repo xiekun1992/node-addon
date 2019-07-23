@@ -92,8 +92,8 @@ map<string, map<string, string>> Player::getInfo() {
 	wrap["video"] = vmap;
 
 	amap["sampleRate"] = string(to_string(audioCodecCtx->sample_rate));
-	amap["channels"] = audioCodecCtx->channels;
-	amap["sampleFormat"] = audioCodecCtx->sample_fmt;
+	amap["channels"] = string(to_string(audioCodecCtx->channels));
+	amap["sampleFormat"] = string(to_string(audioCodecCtx->sample_fmt));
 
 	wrap["audio"] = amap;
 	return wrap;
@@ -115,7 +115,8 @@ void Player::readAudioPacketThread() {
 			}
 		}
 		else {
-			this_thread::sleep_for(chrono::milliseconds(10));
+			break;
+			//this_thread::sleep_for(chrono::milliseconds(10));
 		}
 	}
 }
@@ -135,7 +136,8 @@ void Player::readVideoPacketThread() {
 			}
 		}
 		else {
-			this_thread::sleep_for(chrono::milliseconds(10));
+			break;
+			//this_thread::sleep_for(chrono::milliseconds(10));
 		}
 	}
 }
@@ -184,13 +186,9 @@ void Player::decodeAudio() {
 	avcodec_decode_audio4(audioCodecCtx, frame, &gotFrame, pkt);
 	if (gotFrame) {
 		int size = av_samples_get_buffer_size(NULL, frame->channels, frame->nb_samples, audioCodecCtx->sample_fmt, 1);
-		int out_buffer_size = size / 2;
+		audioBufferSize = size / 2;
 		// interleaved 16bit pcm
 		swr_convert(audioConvertCtx, &audioBuffer, MAX_AUDIO_FRAME_SIZE, (const uint8_t * *)frame->data, frame->nb_samples);
-
-		//audioParams->size = out_buffer_size;
-		//audioParams->buffer = out_buffer;
-		// return true;
 	}
 	av_packet_free(&pkt);
 }

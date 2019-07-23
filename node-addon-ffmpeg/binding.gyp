@@ -5,11 +5,15 @@
             "cflags!": ["-fno-exceptions"],
             "cflags_cc!": ["-fno-exceptions"],
             "sources": [
-                "src/utils/packet-queue.cpp",
-                "src/main.cpp",
-                "src/ffmpeg-video.cpp",
-                "src/ffmpeg-audio.cpp",
-                "src/wrap.cpp"
+                # "src/utils/packet-queue.cpp",
+                # "src/main.cpp",
+                # "src/ffmpeg-video.cpp",
+                # "src/ffmpeg-audio.cpp",
+                # "src/wrap.cpp"
+                "src/player/player.cpp",
+                "src/player/packet_queue.cpp",
+                "src/wrapper/main.cpp",
+                "src/wrapper/playerWrap.cpp"
             ],
             "include_dirs": [
                 "<!@(node -p \"require('node-addon-api').include\")",
