@@ -63,15 +63,40 @@ void Player::init(const char* filename) {
 	int64_t in_channel_layout = av_get_default_channel_layout(audioCodecCtx->channels);
 
 	audioConvertCtx = swr_alloc();
+	// 保持输出采样率，改变了采样格式（交错式16位有符号）和通道数（2）
 	audioConvertCtx = swr_alloc_set_opts(audioConvertCtx, out_channel_layout, out_sample_fmt, out_sample_rate,
 		in_channel_layout, audioCodecCtx->sample_fmt, audioCodecCtx->sample_rate, 0, NULL);
 	swr_init(audioConvertCtx);
 
 
 }
-map<string, string> Player::getInfo() {
-	map<string, string> map;
-	return map;
+map<string, map<string, string>> Player::getInfo() {
+	map<string, map<string, string>> wrap, aa;
+	map<string, string> vmap;
+	map<string, string> amap;
+
+	vmap["fps"] = string(to_string(round(av_q2d(videoFmtCtx->streams[videoStreamIndex]->avg_frame_rate) * 100) / 100));
+	vmap["width"] = string(to_string(videoCodecCtx->width));
+	vmap["height"] = string(to_string(videoCodecCtx->height));
+	vmap["iformatName"] = string(videoFmtCtx->iformat->name);
+	int64_t duration = videoFmtCtx->duration + (videoFmtCtx->duration <= INT64_MAX - 5000 ? 5000 : 0);
+	vmap["duration"] = string(to_string(duration / 1000));
+
+	if (videoFmtCtx->start_time != AV_NOPTS_VALUE) {
+		vmap["start"] = string(to_string(videoFmtCtx->start_time));
+	}
+	if (videoFmtCtx->bit_rate) {
+		vmap["bitrate"] = string(to_string(videoFmtCtx->bit_rate / 1000));
+	}
+
+	wrap["video"] = vmap;
+
+	amap["sampleRate"] = string(to_string(audioCodecCtx->sample_rate));
+	amap["channels"] = audioCodecCtx->channels;
+	amap["sampleFormat"] = audioCodecCtx->sample_fmt;
+
+	wrap["audio"] = amap;
+	return wrap;
 }
 void Player::readAudioPacketThread() {
 	AVPacket* pkt = NULL;

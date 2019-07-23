@@ -13,7 +13,7 @@ public:
 	const char* filename = NULL;
 
 	void init(const char* filename);
-	map<string, string> getInfo();
+	map<string, map<string, string>> getInfo();
 	void readAudioPacketThread();
 	void readVideoPacketThread();
 	void readPacket();
@@ -22,15 +22,15 @@ public:
 
 private:
 	AVFormatContext* audioFmtCtx = NULL;
-	AVFormatContext* videoFmtCtx = NULL;
-
 	PacketQueue audioQueue;
 	AVCodecContext* audioCodecCtx = NULL;
 	AVCodec* audioCodec = NULL;
 	int audioStreamIndex = -1;
 	struct SwrContext* audioConvertCtx = NULL;
-	uint8_t* audioBuffer = NULL;
+	uint8_t* audioBuffer = NULL;// 每次解码后的音频数据
+	int audioClock = 0;// 音频时钟
 
+	AVFormatContext* videoFmtCtx = NULL;
 	PacketQueue videoQueue;
 	AVCodecContext* videoCodecCtx = NULL;
 	AVCodec* videoCodec = NULL;

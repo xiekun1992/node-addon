@@ -4,6 +4,8 @@
 #include <map>
 #include <thread>
 #include <chrono>
+#include <math.h>
+#include <string>
 
 extern "C" {
 #include <libavformat/avformat.h>
