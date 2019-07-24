@@ -17,7 +17,8 @@ public:
 	void readVideoPacketThread();
 	void readPacket();
 	void decodeAudio();
-	void decodeVideo();
+	void decodeVideo(AVPacket* packet);
+	void updateAudioClock(int timeDelta);
 
 	const char* filename = NULL;
 	uint8_t* audioBuffer = NULL;// 每次解码后的音频数据

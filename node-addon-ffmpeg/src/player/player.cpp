@@ -47,6 +47,8 @@ void Player::init(const char* filename) {
 	audioQueue.init();
 	videoQueue.init();
 
+	
+	// 音频转换设置
 	uint64_t out_channel_layout = AV_CH_LAYOUT_STEREO;
 	//nb_samples: AAC-1024 MP3-1152
 	//int out_nb_samples = 44100;// codecCtx->frame_size;
@@ -56,7 +58,7 @@ void Player::init(const char* filename) {
 	//Out Buffer Size
 	//int out_buffer_size = av_samples_get_buffer_size(NULL, out_channels, out_nb_samples, out_sample_fmt, 1);
 
-	uint8_t* out_buffer = (uint8_t*)av_malloc(MAX_AUDIO_FRAME_SIZE * 2);
+	audioBuffer = (uint8_t*)av_malloc(MAX_AUDIO_FRAME_SIZE * 2);
 	//pFrame = av_frame_alloc();
 
 	//FIX:Some Codec's Context Information is missing
@@ -67,8 +69,24 @@ void Player::init(const char* filename) {
 	audioConvertCtx = swr_alloc_set_opts(audioConvertCtx, out_channel_layout, out_sample_fmt, out_sample_rate,
 		in_channel_layout, audioCodecCtx->sample_fmt, audioCodecCtx->sample_rate, 0, NULL);
 	swr_init(audioConvertCtx);
+	
+	// 视频转换设置
+	videoFrame = av_frame_alloc();
+	if (!videoFrame) {
+		throw runtime_error(string("video av_frame_alloc failed"));
+	}
+	videoFrameRGB = av_frame_alloc();
+	if (!videoFrameRGB) {
+		throw runtime_error(string("video av_frame_alloc failed"));
+	}
 
+	int numBytes = avpicture_get_size(AV_PIX_FMT_RGB24, videoCodecCtx->width, videoCodecCtx->height);
+	buffer = (uint8_t*)av_malloc(numBytes * sizeof(uint8_t));
 
+	avpicture_fill((AVPicture*)videoFrameRGB, buffer, AV_PIX_FMT_RGB24, videoCodecCtx->width, videoCodecCtx->height);
+	swsCtx = sws_getContext(
+		videoCodecCtx->width, videoCodecCtx->height, videoCodecCtx->pix_fmt, videoCodecCtx->width, videoCodecCtx->height,
+		AV_PIX_FMT_RGB24, SWS_BILINEAR, NULL, NULL, NULL);
 }
 map<string, map<string, string>> Player::getInfo() {
 	map<string, map<string, string>> wrap, aa;
@@ -103,7 +121,7 @@ void Player::readAudioPacketThread() {
 	pkt = av_packet_alloc();
 	
 	while (true) {
-		if (audioQueue.size < 20 * 1024 * 1024) {
+		if (audioQueue.size < 10 * 1024 * 1024) {
 			if (av_read_frame(audioFmtCtx, pkt) >= 0) {
 				//printf("packet stream_index=%d, audio index=%d, dts=%d\n", pkt->stream_index, audioStreamIndex, pkt->dts);
 				if (pkt->stream_index == audioStreamIndex) {
@@ -143,37 +161,16 @@ void Player::readVideoPacketThread() {
 }
 void Player::readPacket() {
 	thread readAudio(&Player::readAudioPacketThread, this);
-	thread readVideo(&Player::readVideoPacketThread, this);
+	//thread readVideo(&Player::readVideoPacketThread, this);
 	
 	readAudio.join();
-	readVideo.join();
+	//readVideo.join();
+}
+void Player::updateAudioClock(int timeDelta) {
+	audioClock = timeDelta;
+	readPacket();
 }
 void Player::decodeAudio() {
-	//AVFrame* frame;
-	//frame = av_frame_alloc();
-	//AVPacket* pkt;
-	//pkt = av_packet_alloc();
-	//
-	//uint64_t out_channel_layout = AV_CH_LAYOUT_STEREO;
-	////nb_samples: AAC-1024 MP3-1152
-	////int out_nb_samples = 44100;// codecCtx->frame_size;
-	//AVSampleFormat out_sample_fmt = AV_SAMPLE_FMT_S16;
-	//int out_sample_rate = audioCodecCtx->sample_rate;
-	////int out_channels = av_get_channel_layout_nb_channels(out_channel_layout);
-	////Out Buffer Size
-	////int out_buffer_size = av_samples_get_buffer_size(NULL, out_channels, out_nb_samples, out_sample_fmt, 1);
-	//
-	//uint8_t* out_buffer = (uint8_t*)av_malloc(MAX_AUDIO_FRAME_SIZE * 2);
-	////pFrame = av_frame_alloc();
-	//
-	////FIX:Some Codec's Context Information is missing
-	//int64_t in_channel_layout = av_get_default_channel_layout(audioCodecCtx->channels);
-	//
-	//audioConvertCtx = swr_alloc();
-	//audioConvertCtx = swr_alloc_set_opts(audioConvertCtx, out_channel_layout, out_sample_fmt, out_sample_rate,
-	//	in_channel_layout, audioCodecCtx->sample_fmt, audioCodecCtx->sample_rate, 0, NULL);
-	//swr_init(audioConvertCtx);
-
 	AVPacket* pkt;
 	pkt = av_packet_alloc();
 	if (audioQueue.get(pkt) < 0) {
@@ -190,23 +187,15 @@ void Player::decodeAudio() {
 		// interleaved 16bit pcm
 		swr_convert(audioConvertCtx, &audioBuffer, MAX_AUDIO_FRAME_SIZE, (const uint8_t * *)frame->data, frame->nb_samples);
 	}
-	av_packet_free(&pkt);
+	//av_packet_unref(pkt);
+	//av_packet_free(&pkt);
 }
-void Player::decodeVideo() {
-	//videoFrame = av_frame_alloc();
-	//if (!videoFrame) {
-	//	throw runtime_error(string("video av_frame_alloc failed"));
-	//}
-	//videoFrameRGB = av_frame_alloc();
-	//if (!videoFrameRGB) {
-	//	throw runtime_error(string("video av_frame_alloc failed"));
-	//}
-	//
-	//int numBytes = avpicture_get_size(AV_PIX_FMT_RGB24, videoCodecCtx->width, videoCodecCtx->height);
-	//buffer = (uint8_t*)av_malloc(numBytes * sizeof(uint8_t));
-	//
-	//avpicture_fill((AVPicture*)videoFrameRGB, buffer, AV_PIX_FMT_RGB24, videoCodecCtx->width, videoCodecCtx->height);
-	//swsCtx = sws_getContext(
-	//	videoCodecCtx->width, videoCodecCtx->height, videoCodecCtx->pix_fmt, videoCodecCtx->width, videoCodecCtx->height,
-	//	AV_PIX_FMT_RGB24, SWS_BILINEAR, NULL, NULL, NULL);
+void Player::decodeVideo(AVPacket* packet) {
+	int frameFinished;
+	avcodec_decode_video2(videoCodecCtx, videoFrame, &frameFinished, packet);
+	if (frameFinished) {
+		sws_scale(swsCtx, (uint8_t const* const*)videoFrame->data, videoFrame->linesize, 0, videoCodecCtx->height, videoFrameRGB->data, videoFrameRGB->linesize);
+		av_free_packet(packet);
+	}
+
 }

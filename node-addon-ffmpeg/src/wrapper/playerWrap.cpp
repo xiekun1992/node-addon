@@ -15,7 +15,7 @@ Napi::Value playerWrap::readPacket(const Napi::CallbackInfo& info) {
 }
 Napi::Value playerWrap::decodeAudio(const Napi::CallbackInfo& info) {
     Napi::Env env = info.Env();
-    player.decodeVideo();
+    player.decodeAudio();
     return Napi::Buffer<uint8_t>::New(env, player.audioBuffer, player.audioBufferSize);
 }
 Napi::Value playerWrap::decodeVideo(const Napi::CallbackInfo& info) {
