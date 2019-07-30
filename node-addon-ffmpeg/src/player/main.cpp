@@ -4,7 +4,7 @@ int main()
 	Player p;
 	p.init("D:\\Wildlife.wmv");
 	p.readPacket();
-	p.decodeAudio();
+	//p.decodeAudio();
 	
 	//thread readAudio(&Player::readAudioPacketThread, p);
 	//thread readVideo(&Player::readVideoPacketThread, p);

@@ -1,6 +1,7 @@
 #pragma once
 #include "common.h"
 #include "packet_queue.h"
+#include "picture_queue.h"
 
 #define MAX_AUDIO_FRAME_SIZE 192000 // 1 second of 48khz 32bit audio
 
@@ -17,12 +18,13 @@ public:
 	void readVideoPacketThread();
 	void readPacket();
 	void decodeAudio();
-	void decodeVideo(AVPacket* packet);
+	void decodeVideo();
 	void updateAudioClock(int timeDelta);
 
 	const char* filename = NULL;
 	uint8_t* audioBuffer = NULL;// 每次解码后的音频数据
 	int audioBufferSize = 0;
+	int videoBufferSize = 0;
 	int audioClock = 0;// 音频时钟
 	uint8_t* buffer = NULL;
 
@@ -35,11 +37,12 @@ private:
 	struct SwrContext* audioConvertCtx = NULL;
 
 	AVFormatContext* videoFmtCtx = NULL;
-	PacketQueue videoQueue;
+	PictureQueue videoQueue;
 	AVCodecContext* videoCodecCtx = NULL;
 	AVCodec* videoCodec = NULL;
 	int videoStreamIndex = -1;
-	AVFrame* videoFrame = NULL;
+	
+	//AVFrame* videoFrame = NULL;
 	AVFrame* videoFrameRGB = NULL;
 	struct SwsContext* swsCtx = NULL;
 };

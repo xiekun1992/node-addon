@@ -12,6 +12,7 @@
                 # "src/wrap.cpp"
                 "src/player/player.cpp",
                 "src/player/packet_queue.cpp",
+                "src/player/picture_queue.cpp",
                 "src/wrapper/main.cpp",
                 "src/wrapper/playerWrap.cpp"
             ],

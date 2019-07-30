@@ -2,6 +2,15 @@
 
 Player player;
 
+class PacketWorker: public Napi::AsyncWorker {
+public:
+    PacketWorker(const Napi::Function& callback): Napi::AsyncWorker(callback){}
+    ~PacketWorker(){}
+    void Execute() {
+        player.readPacket();
+    }
+};
+
 Napi::Value playerWrap::init(const Napi::CallbackInfo& info) {
     Napi::Env env = info.Env();
     std::string filename = info[0].As<Napi::String>().ToString();
@@ -10,7 +19,9 @@ Napi::Value playerWrap::init(const Napi::CallbackInfo& info) {
 }
 Napi::Value playerWrap::readPacket(const Napi::CallbackInfo& info) {
     Napi::Env env = info.Env();
-    player.readPacket();
+    Napi::Function func = info[0].As<Napi::Function>();
+    PacketWorker* worker = new PacketWorker(func);
+    worker->Queue();
     return env.Undefined();
 }
 Napi::Value playerWrap::decodeAudio(const Napi::CallbackInfo& info) {
@@ -20,7 +31,12 @@ Napi::Value playerWrap::decodeAudio(const Napi::CallbackInfo& info) {
 }
 Napi::Value playerWrap::decodeVideo(const Napi::CallbackInfo& info) {
     Napi::Env env = info.Env();
-    return env.Undefined();
+    // return env.Undefined();
+    player.decodeVideo();
+    if (!player.buffer) {
+        return env.Null();
+    }
+    return Napi::Buffer<uint8_t>::New(env, player.buffer, player.videoBufferSize);
 }
 Napi::Object playerWrap::getInfo(const Napi::CallbackInfo& info) {
     Napi::Env env = info.Env();

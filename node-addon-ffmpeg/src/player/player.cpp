@@ -45,7 +45,6 @@ void Player::init(const char* filename) {
 		throw runtime_error(string("video avcodec_open2 failed"));
 	}
 	audioQueue.init();
-	videoQueue.init();
 
 	
 	// 音频转换设置
@@ -71,22 +70,22 @@ void Player::init(const char* filename) {
 	swr_init(audioConvertCtx);
 	
 	// 视频转换设置
-	videoFrame = av_frame_alloc();
-	if (!videoFrame) {
-		throw runtime_error(string("video av_frame_alloc failed"));
-	}
-	videoFrameRGB = av_frame_alloc();
-	if (!videoFrameRGB) {
-		throw runtime_error(string("video av_frame_alloc failed"));
-	}
+
+	//videoFrameRGB = av_frame_alloc();
+	//if (!videoFrameRGB) {
+	//	throw runtime_error(string("video av_frame_alloc failed"));
+	//}
 
 	int numBytes = avpicture_get_size(AV_PIX_FMT_RGB24, videoCodecCtx->width, videoCodecCtx->height);
-	buffer = (uint8_t*)av_malloc(numBytes * sizeof(uint8_t));
+	videoBufferSize = numBytes * sizeof(uint8_t);
+	//buffer = (uint8_t*)av_malloc(videoBufferSize);
 
-	avpicture_fill((AVPicture*)videoFrameRGB, buffer, AV_PIX_FMT_RGB24, videoCodecCtx->width, videoCodecCtx->height);
-	swsCtx = sws_getContext(
-		videoCodecCtx->width, videoCodecCtx->height, videoCodecCtx->pix_fmt, videoCodecCtx->width, videoCodecCtx->height,
-		AV_PIX_FMT_RGB24, SWS_BILINEAR, NULL, NULL, NULL);
+	//avpicture_fill((AVPicture*)videoFrameRGB, buffer, AV_PIX_FMT_RGB24, videoCodecCtx->width, videoCodecCtx->height);
+	//swsCtx = sws_getContext(
+	//	videoCodecCtx->width, videoCodecCtx->height, videoCodecCtx->pix_fmt, videoCodecCtx->width, videoCodecCtx->height,
+	//	AV_PIX_FMT_RGB24, SWS_BILINEAR, NULL, NULL, NULL);
+
+	videoQueue.init(videoBufferSize);
 }
 map<string, map<string, string>> Player::getInfo() {
 	map<string, map<string, string>> wrap, aa;
@@ -129,46 +128,58 @@ void Player::readAudioPacketThread() {
 				}
 			}
 			else {
-				break;
+				//break;
+				this_thread::sleep_for(chrono::milliseconds(10));
 			}
 		}
 		else {
-			break;
-			//this_thread::sleep_for(chrono::milliseconds(10));
+			//break;
+			this_thread::sleep_for(chrono::milliseconds(10));
 		}
 	}
 }
 void Player::readVideoPacketThread() {
-	AVPacket* pkt = NULL;
-	pkt = av_packet_alloc();
-
+	AVPacket* pkt = av_packet_alloc();
+	AVFrame* videoFrame = av_frame_alloc();//videoQueue.getEmptyFrame();
 	while (true) {
-		if (videoQueue.size < 8 * 1024 * 1024) {
+		if (videoQueue.avail() > 0) {
 			if (av_read_frame(videoFmtCtx, pkt) >= 0) {
 				if (pkt->stream_index == videoStreamIndex) {
-					videoQueue.put(pkt);
+					int frameFinished;
+					avcodec_decode_video2(videoCodecCtx, videoFrame, &frameFinished, pkt);
+					if (frameFinished) {
+						videoFrameRGB = av_frame_alloc();
+						uint8_t* buffer = videoQueue.getEmptyFrame();
+						avpicture_fill((AVPicture*)videoFrameRGB, buffer, AV_PIX_FMT_RGB24, videoCodecCtx->width, videoCodecCtx->height);
+						swsCtx = sws_getContext(
+							videoCodecCtx->width, videoCodecCtx->height, videoCodecCtx->pix_fmt, videoCodecCtx->width, videoCodecCtx->height,
+							AV_PIX_FMT_RGB24, SWS_BILINEAR, NULL, NULL, NULL);
+						sws_scale(swsCtx, (uint8_t const* const*)videoFrame->data, videoFrame->linesize, 0, videoCodecCtx->height, videoFrameRGB->data, videoFrameRGB->linesize);
+					}
 				}
 			}
 			else {
-				break;
+				//break;
+				this_thread::sleep_for(chrono::milliseconds(10));
 			}
 		}
 		else {
-			break;
-			//this_thread::sleep_for(chrono::milliseconds(10));
+			//break;
+			this_thread::sleep_for(chrono::milliseconds(10));
 		}
 	}
+	av_free_packet(pkt);
 }
 void Player::readPacket() {
 	thread readAudio(&Player::readAudioPacketThread, this);
-	//thread readVideo(&Player::readVideoPacketThread, this);
+	thread readVideo(&Player::readVideoPacketThread, this);
 	
 	readAudio.join();
-	//readVideo.join();
+	readVideo.join();
 }
 void Player::updateAudioClock(int timeDelta) {
 	audioClock = timeDelta;
-	readPacket();
+	//readPacket();
 }
 void Player::decodeAudio() {
 	AVPacket* pkt;
@@ -190,12 +201,24 @@ void Player::decodeAudio() {
 	//av_packet_unref(pkt);
 	//av_packet_free(&pkt);
 }
-void Player::decodeVideo(AVPacket* packet) {
-	int frameFinished;
-	avcodec_decode_video2(videoCodecCtx, videoFrame, &frameFinished, packet);
-	if (frameFinished) {
-		sws_scale(swsCtx, (uint8_t const* const*)videoFrame->data, videoFrame->linesize, 0, videoCodecCtx->height, videoFrameRGB->data, videoFrameRGB->linesize);
-		av_free_packet(packet);
-	}
+void Player::decodeVideo() {
+	//int frameFinished;
+	//AVFrame* videoFrame = av_frame_alloc();
+	//AVPacket* packet = av_packet_alloc();
+	//if (av_read_frame(videoFmtCtx, packet) >= 0) {
+	//	if (packet->stream_index == videoStreamIndex) {
+	//		avcodec_decode_video2(videoCodecCtx, videoFrame, &frameFinished, packet);
+	//		if (frameFinished) {
+	//			sws_scale(swsCtx, (uint8_t const* const*)videoFrame->data, videoFrame->linesize, 0, videoCodecCtx->height, videoFrameRGB->data, videoFrameRGB->linesize);
+	//			av_free_packet(packet);
+	//		}
+	//	}
+	//}
+	
+	//AVFrame* videoFrame = videoQueue.getDecodedFrame();
+	//if (videoFrame) {
+	//	sws_scale(swsCtx, (uint8_t const* const*)videoFrame->data, videoFrame->linesize, 0, videoCodecCtx->height, videoFrameRGB->data, videoFrameRGB->linesize);
+	//}
 
+	buffer = videoQueue.getDecodedFrame();
 }
