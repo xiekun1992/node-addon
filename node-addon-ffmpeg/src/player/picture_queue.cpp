@@ -43,7 +43,7 @@
 
 void PictureQueue::init(int bufferSize) {
 	// 创建长度为30的循环链表
-	length = 30;
+	length = 20;
 	FrameList* frameList = static_cast<FrameList*> (malloc(sizeof(FrameList)));
 	if (frameList) {
 		frameList->frame = static_cast<uint8_t*> (av_malloc(bufferSize));
