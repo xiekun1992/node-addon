@@ -153,6 +153,7 @@ void Player::readVideoPacketThread() {
 	AVPacket* pkt = av_packet_alloc();
 	AVFrame* videoFrame = av_frame_alloc();//videoQueue.getEmptyFrame();
 	uint8_t* buffer = NULL;
+	videoFrameRGB = av_frame_alloc();
 	while (true) {
 		if (videoQueue.avail() > 0) {
 			if (av_read_frame(videoFmtCtx, pkt) >= 0) {
@@ -160,7 +161,6 @@ void Player::readVideoPacketThread() {
 					int frameFinished;
 					avcodec_decode_video2(videoCodecCtx, videoFrame, &frameFinished, pkt);
 					if (frameFinished) {
-						videoFrameRGB = av_frame_alloc();
 						buffer = videoQueue.getEmptyFrame();
 						avpicture_fill((AVPicture*)videoFrameRGB, buffer, AV_PIX_FMT_RGB24, videoCodecCtx->width, videoCodecCtx->height);
 						swsCtx = sws_getContext(
@@ -182,6 +182,7 @@ void Player::readVideoPacketThread() {
 	}
 	av_free_packet(pkt);
 	av_frame_free(&videoFrame);
+	av_frame_free(&videoFrameRGB);
 }
 void Player::readPacket() {
 	thread readAudio(&Player::readAudioPacketThread, this);
