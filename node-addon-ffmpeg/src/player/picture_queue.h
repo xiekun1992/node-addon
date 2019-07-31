@@ -38,7 +38,7 @@ public:
 
 	int length = 0;
 	void init(int bufferSize);
-	uint8_t* getEmptyFrame();
-	uint8_t* getDecodedFrame();
+	int getEmptyFrame(uint8_t** frame);
+	int getDecodedFrame(uint8_t** frame);
 	int avail();
 };

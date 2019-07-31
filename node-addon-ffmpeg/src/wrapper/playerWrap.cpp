@@ -37,16 +37,13 @@ Napi::Value playerWrap::decodeVideo(const Napi::CallbackInfo& info) {
     if (!player.buffer) {
         return env.Null();
     }
-    Napi::Buffer<uint8_t> buffer = Napi::Buffer<uint8_t>::New(env, player.buffer, player.videoBufferSize,
-        [](Napi::Env env, uint8_t* finalizeData) {
-            printf("finalized");
-            finalizeData = NULL;
-            // delete[] finalizeData;
-        });
-    // int size = player.videoBufferSize;
-    // uint8_t* buf = static_cast<uint8_t*> (malloc(size));
-    // memcpy(buf, player.buffer, size);
-    return buffer;
+    return Napi::Buffer<uint8_t>::New(env, player.buffer, player.videoBufferSize);
+    // Napi::Buffer<uint8_t> buffer = Napi::Buffer<uint8_t>::New(env, player.buffer, player.videoBufferSize,
+    //     [](Napi::Env env, uint8_t* finalizeData) {
+    //         finalizeData = NULL;
+    //         // delete[] finalizeData;
+    //     });
+    // return buffer;
 }
 Napi::Object playerWrap::getInfo(const Napi::CallbackInfo& info) {
     Napi::Env env = info.Env();

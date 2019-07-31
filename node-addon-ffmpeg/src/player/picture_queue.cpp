@@ -61,22 +61,22 @@ void PictureQueue::init(int bufferSize) {
 	last->next = first;
 }
 // 帧数据转换用
-uint8_t* PictureQueue::getDecodedFrame() {
+int PictureQueue::getDecodedFrame(uint8_t** frame) {
 	if (last->next != first) {
-		uint8_t* frame = last->next->frame;
+		*frame = last->next->frame;
 		last = last->next;
-		return frame;
+		return 1;
 	}
-	return NULL;
+	return -1;
 }
 // 解码线程放置帧数据用
-uint8_t* PictureQueue::getEmptyFrame() {
+int PictureQueue::getEmptyFrame(uint8_t** frame) {
 	if (first != last) {
-		uint8_t* frame = first->frame;
+		*frame = first->frame;
 		first = first->next;
-		return frame;
+		return 1;
 	}
-	return NULL;
+	return -1;
 }
 int PictureQueue::avail() {
 	return first == last ? 0 : 1;

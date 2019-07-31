@@ -2,7 +2,9 @@
 int main()
 {
 	Player p;
-	p.init("D:\\Wildlife.wmv");
+	//p.init("D:\\Wildlife.wmv");
+	p.init("D:\\testvideo\\ÑÒ½¬ÑÒ.mp4");
+	
 	p.readPacket();
 	//p.decodeAudio();
 	

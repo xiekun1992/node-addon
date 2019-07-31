@@ -12,8 +12,9 @@ extern "C" {
 #include <libavcodec/avcodec.h>
 #include <libswscale/swscale.h>
 #include <libswresample/swresample.h>
+#include <libavutil/imgutils.h>
 }
 
-#pragma warning(disable: 4996)
+//#pragma warning(disable: 4996)
 
 using namespace std;

@@ -3,8 +3,8 @@ console.log(ffmpeg.init("D:\\Wildlife.wmv"))
 console.log(ffmpeg.getInfo())
 console.log(ffmpeg.readPacket(function(){}))
 setInterval(function() {
-    console.log(ffmpeg.decodeVideo())
-}, 100)
+    console.log('===', ffmpeg.decodeVideo())
+}, 10)
 
 // console.log(ffmpeg.config("D:\\Wildlife.wmv"))
 // console.log(ffmpeg.extractRGBFrame())
