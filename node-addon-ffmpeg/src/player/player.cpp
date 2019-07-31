@@ -43,7 +43,7 @@ void Player::init(const char* filename) {
 		//Out Buffer Size
 		//int out_buffer_size = av_samples_get_buffer_size(NULL, out_channels, out_nb_samples, out_sample_fmt, 1);
 
-		audioBuffer = (uint8_t*)av_malloc(MAX_AUDIO_FRAME_SIZE * 2);
+		//audioBuffer = (uint8_t*)av_malloc(MAX_AUDIO_FRAME_SIZE * 2);
 		//pFrame = av_frame_alloc();
 
 		//FIX:Some Codec's Context Information is missing
@@ -124,7 +124,7 @@ void Player::readAudioPacketThread() {
 	}
 	
 	while (true) {
-		if (audioQueue.size < 10 * 1024 * 1024) {
+		if (audioQueue.packets < 10) {
 			AVPacket* pkt = av_packet_alloc();
 			if (av_read_frame(audioFmtCtx, pkt) >= 0) {
 				//printf("packet stream_index=%d, audio index=%d, dts=%d\n", pkt->stream_index, audioStreamIndex, pkt->dts);
@@ -136,10 +136,10 @@ void Player::readAudioPacketThread() {
 				//break;
 				this_thread::sleep_for(chrono::milliseconds(10));
 			}
-			av_packet_free(&pkt);
+			//av_packet_free(&pkt);
 		}
 		else {
-			//break;
+			break;
 			this_thread::sleep_for(chrono::milliseconds(10));
 		}
 	}
@@ -195,23 +195,22 @@ void Player::decodeAudio() {
 	if (audioStreamIndex < 0) {
 		return;
 	}
-	AVPacket* pkt;
-	pkt = av_packet_alloc();
+	AVPacket* pkt = av_packet_alloc();
 	if (audioQueue.get(pkt) < 0) {
 		av_packet_free(&pkt);
 		return;
 	}
-	AVFrame* frame;
-	frame = av_frame_alloc();
 	if (avcodec_send_packet(audioCodecCtx, pkt) >= 0) {
+		AVFrame* frame = av_frame_alloc();
 		avcodec_receive_frame(audioCodecCtx, frame);
-		int size = av_samples_get_buffer_size(NULL, frame->channels, frame->nb_samples, audioCodecCtx->sample_fmt, 1);
-		audioBufferSize = size / 2;
+		audioBuffer = (uint8_t*)av_malloc(MAX_AUDIO_FRAME_SIZE * 2);
+		audioBufferSize = av_samples_get_buffer_size(NULL, frame->channels, frame->nb_samples, audioCodecCtx->sample_fmt, 1) / 2;
 		// interleaved 16bit pcm
 		swr_convert(audioConvertCtx, &audioBuffer, MAX_AUDIO_FRAME_SIZE, (const uint8_t * *)frame->data, frame->nb_samples);
+		av_frame_free(&frame);
 	}
 	//av_packet_unref(pkt);
-	//av_packet_free(&pkt);
+	av_packet_free(&pkt);
 }
 void Player::decodeVideo() {
 	if (videoStreamIndex < 0) {
