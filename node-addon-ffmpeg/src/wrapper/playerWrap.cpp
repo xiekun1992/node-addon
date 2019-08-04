@@ -26,15 +26,16 @@ Napi::Value playerWrap::readPacket(const Napi::CallbackInfo& info) {
 }
 Napi::Value playerWrap::decodeAudio(const Napi::CallbackInfo& info) {
     Napi::Env env = info.Env();
-    player.decodeAudio();
+    if (player.decodeAudio() < 0) {
+        return env.Null();
+    }
     return Napi::Buffer<uint8_t>::New(env, player.audioBuffer, player.audioBufferSize);
 }
 
 Napi::Value playerWrap::decodeVideo(const Napi::CallbackInfo& info) {
     Napi::Env env = info.Env();
     // return env.Undefined();
-    player.decodeVideo();
-    if (!player.buffer) {
+    if (player.decodeVideo() < 0) {
         return env.Null();
     }
     return Napi::Buffer<uint8_t>::New(env, player.buffer, player.videoBufferSize);
