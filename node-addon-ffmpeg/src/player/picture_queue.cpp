@@ -67,7 +67,7 @@ int PictureQueue::getDecodedFrame(uint8_t** frame, int* size, int* pts) {
 		FrameList* frameList = last->next;
 		if (first->pts >= *pts) {
 			while (*pts > -1) {
-				if (*pts >= frameList->pts) {
+				if (*pts >= frameList->pts || last->next == first) {
 					break;
 				}
 				else {
@@ -86,6 +86,7 @@ int PictureQueue::getDecodedFrame(uint8_t** frame, int* size, int* pts) {
 // 解码线程放置帧数据用
 int PictureQueue::getEmptyFrame(uint8_t** frame, int size, int pts) {
 	if (first != last) {
+		printf("%d\n", pts);
 		*frame = first->frame;
 		first->size = size;
 		first->pts = pts;

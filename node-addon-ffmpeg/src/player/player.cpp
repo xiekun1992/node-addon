@@ -167,7 +167,7 @@ void Player::readVideoPacketThread() {
 					AVFrame* videoFrameRGB = av_frame_alloc();
 					if (avcodec_send_packet(videoCodecCtx, pkt) >= 0) {
 						avcodec_receive_frame(videoCodecCtx, videoFrame);
-						videoQueue.getEmptyFrame(&buffer, 0, pkt->pts);
+						videoQueue.getEmptyFrame(&buffer, 0, pkt->dts);
 						av_image_fill_arrays(videoFrameRGB->data, videoFrameRGB->linesize, buffer, AV_PIX_FMT_RGB24, videoCodecCtx->width, videoCodecCtx->height, 1);
 						struct SwsContext* swsCtx = sws_getContext(videoCodecCtx->width, videoCodecCtx->height, videoCodecCtx->pix_fmt, videoCodecCtx->width, videoCodecCtx->height, AV_PIX_FMT_RGB24, SWS_BILINEAR, NULL, NULL, NULL);
 						sws_scale(swsCtx, (uint8_t const* const*)videoFrame->data, videoFrame->linesize, 0, videoCodecCtx->height, videoFrameRGB->data, videoFrameRGB->linesize);
@@ -199,8 +199,7 @@ void Player::readPacket() {
 	readVideo.join();
 }
 void Player::updateAudioClock(int timeDelta) {
-	audioClock = timeDelta;
-	//readPacket();
+	audioClock = timeDelta * 1000;
 }
 int Player::decodeAudio() {
 	if (audioStreamIndex < 0) {

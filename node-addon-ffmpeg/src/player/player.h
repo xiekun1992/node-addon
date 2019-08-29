@@ -25,7 +25,7 @@ public:
 	uint8_t* audioBuffer = NULL;// 每次解码后的音频数据
 	int audioBufferSize = 0;
 	int videoBufferSize = 0;
-	int audioClock = 0;// 音频时钟
+	int audioClock = 0;// 音频时钟保存时间微秒值
 	uint8_t* buffer = NULL;
 
 private:
