@@ -17,8 +17,8 @@ public:
 	void readAudioPacketThread();
 	void readVideoPacketThread();
 	void readPacket();
-	void decodeAudio();
-	void decodeVideo();
+	int decodeAudio();
+	int decodeVideo();
 	void updateAudioClock(int timeDelta);
 
 	const char* filename = NULL;
@@ -30,7 +30,7 @@ public:
 
 private:
 	AVFormatContext* audioFmtCtx = NULL;
-	PacketQueue audioQueue;
+	PictureQueue audioQueue;
 	AVCodecContext* audioCodecCtx = NULL;
 	AVCodec* audioCodec = NULL;
 	int audioStreamIndex = -1;
