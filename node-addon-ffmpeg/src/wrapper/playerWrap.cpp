@@ -2,6 +2,7 @@
 
 Player player;
 
+
 class PacketWorker: public Napi::AsyncWorker {
 public:
     PacketWorker(const Napi::Function& callback): Napi::AsyncWorker(callback){}
@@ -71,11 +72,43 @@ Napi::Object playerWrap::getInfo(const Napi::CallbackInfo& info) {
     return obj;
 }
 
+Napi::ThreadSafeFunction tsfn;
+std::thread nativeThread;
+
+Napi::Value update(const Napi::CallbackInfo& info) {
+    Napi::Env env = info.Env();
+    tsfn = Napi::ThreadSafeFunction::New(env, info[0].As<Napi::Function>(), "Resource Name", 0, 1, [](Napi::Env) {
+        nativeThread.join();
+    });
+    nativeThread = thread([] {
+        auto callback = [](Napi::Env env, Napi::Function jsCallback) {
+            player.decodeVideo();
+            player.decodeAudio();
+            jsCallback.Call({
+                Napi::Buffer<uint8_t>::New(env, player.buffer, player.videoBufferSize),
+                Napi::Buffer<uint8_t>::New(env, player.audioBuffer, player.audioBufferSize)
+            });
+        };
+        while(true) {
+            napi_status status = tsfn.BlockingCall(callback);
+            if (status != napi_ok) {
+                printf("call failed\n");
+                break;
+            }
+            this_thread::sleep_for(chrono::milliseconds(10));
+        }
+        tsfn.Release();
+    });
+    return Napi::Boolean::New(env, true);
+}
+
 Napi::Object playerWrap::initMethods(Napi::Env env, Napi::Object exports) {
     exports.Set("init", Napi::Function::New(env, playerWrap::init));
     exports.Set("readPacket", Napi::Function::New(env, playerWrap::readPacket));
     exports.Set("decodeAudio", Napi::Function::New(env, playerWrap::decodeAudio));
     exports.Set("decodeVideo", Napi::Function::New(env, playerWrap::decodeVideo));
     exports.Set("getInfo", Napi::Function::New(env, playerWrap::getInfo));
+
+    exports.Set("update", Napi::Function::New(env, update));
     return exports;
 }
