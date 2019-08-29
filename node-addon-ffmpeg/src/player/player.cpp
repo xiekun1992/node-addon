@@ -191,10 +191,10 @@ void Player::readVideoPacketThread() {
 }
 void Player::readPacket() {
 	thread readAudio(&Player::readAudioPacketThread, this);
-	//thread readVideo(&Player::readVideoPacketThread, this);
+	thread readVideo(&Player::readVideoPacketThread, this);
 
 	readAudio.join();
-	//readVideo.join();
+	readVideo.join();
 }
 void Player::updateAudioClock(int timeDelta) {
 	audioClock = timeDelta;
