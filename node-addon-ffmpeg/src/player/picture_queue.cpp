@@ -62,31 +62,45 @@ void PictureQueue::init(int bufferSize, int queueLength) {
 	last->next = first;
 }
 // 帧数据转换用
-int PictureQueue::getDecodedFrame(uint8_t** frame, int* size) {
+int PictureQueue::getDecodedFrame(uint8_t** frame, int* size, int* pts) {
 	if (last->next != first) {
-		*frame = last->next->frame;
-		*size = last->next->size;
-		last = last->next;
+		FrameList* frameList = last->next;
+		if (first->pts >= *pts) {
+			while (*pts > -1) {
+				if (*pts >= frameList->pts) {
+					break;
+				}
+				else {
+					frameList = last->next;
+				}
+			}
+		}
+		*frame = frameList->frame;
+		*size = frameList->size;
+		//*pts = frameList->pts;
+		last = frameList;
 		return 1;
 	}
 	return -1;
 }
 // 解码线程放置帧数据用
-int PictureQueue::getEmptyFrame(uint8_t** frame, int size) {
+int PictureQueue::getEmptyFrame(uint8_t** frame, int size, int pts) {
 	if (first != last) {
 		*frame = first->frame;
 		first->size = size;
+		first->pts = pts;
 		first = first->next;
 		return 1;
 	}
 	return -1;
 }
-int PictureQueue::getReallocEmptyFrame(uint8_t** frame, int size) {
+int PictureQueue::getReallocEmptyFrame(uint8_t** frame, int size, int pts) {
 	if (first != last) {
 		av_free(first->frame);
 		first->frame = static_cast<uint8_t*> (av_malloc(bufferSize));
 		*frame = first->frame;
 		first->size = size;
+		first->pts = pts;
 		first = first->next;
 		return 1;
 	}

@@ -133,7 +133,7 @@ void Player::readAudioPacketThread() {
 						avcodec_receive_frame(audioCodecCtx, frame);
 						//audioBuffer = (uint8_t*)av_malloc(MAX_AUDIO_FRAME_SIZE * 2);
 						int size = av_samples_get_buffer_size(NULL, frame->channels, frame->nb_samples, audioCodecCtx->sample_fmt, 1) / 2;
-						audioQueue.getReallocEmptyFrame(&audioBuffer, size);
+						audioQueue.getReallocEmptyFrame(&audioBuffer, size, pkt->pts);
 						// interleaved 16bit pcm
 						swr_convert(audioConvertCtx, &audioBuffer, MAX_AUDIO_FRAME_SIZE, (const uint8_t * *)frame->data, frame->nb_samples);
 						av_frame_free(&frame);
@@ -142,8 +142,9 @@ void Player::readAudioPacketThread() {
 				}
 			}
 			else {
-				//break;
-				this_thread::sleep_for(chrono::milliseconds(10));
+				av_packet_free(&pkt);
+				break;
+				//this_thread::sleep_for(chrono::milliseconds(10));
 			}
 			av_packet_free(&pkt);
 		}
@@ -166,7 +167,7 @@ void Player::readVideoPacketThread() {
 					AVFrame* videoFrameRGB = av_frame_alloc();
 					if (avcodec_send_packet(videoCodecCtx, pkt) >= 0) {
 						avcodec_receive_frame(videoCodecCtx, videoFrame);
-						videoQueue.getEmptyFrame(&buffer, 0);
+						videoQueue.getEmptyFrame(&buffer, 0, pkt->pts);
 						av_image_fill_arrays(videoFrameRGB->data, videoFrameRGB->linesize, buffer, AV_PIX_FMT_RGB24, videoCodecCtx->width, videoCodecCtx->height, 1);
 						struct SwsContext* swsCtx = sws_getContext(videoCodecCtx->width, videoCodecCtx->height, videoCodecCtx->pix_fmt, videoCodecCtx->width, videoCodecCtx->height, AV_PIX_FMT_RGB24, SWS_BILINEAR, NULL, NULL, NULL);
 						sws_scale(swsCtx, (uint8_t const* const*)videoFrame->data, videoFrame->linesize, 0, videoCodecCtx->height, videoFrameRGB->data, videoFrameRGB->linesize);
@@ -177,8 +178,9 @@ void Player::readVideoPacketThread() {
 				}
 			}
 			else {
-				//break;
-				this_thread::sleep_for(chrono::milliseconds(10));
+				av_packet_free(&pkt);
+				break;
+				//this_thread::sleep_for(chrono::milliseconds(10));
 			}
 			// 使用av_free_packet会有内存泄漏大约一分钟5M
 			av_packet_free(&pkt);
@@ -220,12 +222,13 @@ int Player::decodeAudio() {
 	//}
 	////av_packet_unref(pkt);
 	//av_packet_free(&pkt);
-	return audioQueue.getDecodedFrame(&audioBuffer, &audioBufferSize);
+	int tmp = -1;
+	return audioQueue.getDecodedFrame(&audioBuffer, &audioBufferSize, &tmp);
 }
 int Player::decodeVideo() {
 	if (videoStreamIndex < 0) {
 		return -1;
 	}
 	int tmp = 0;
-	return videoQueue.getDecodedFrame(&buffer, &tmp);
+	return videoQueue.getDecodedFrame(&buffer, &tmp, &audioClock);
 }
