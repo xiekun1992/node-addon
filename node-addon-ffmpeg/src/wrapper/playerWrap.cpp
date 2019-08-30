@@ -71,25 +71,48 @@ Napi::Object playerWrap::getInfo(const Napi::CallbackInfo& info) {
 
     return obj;
 }
+Napi::Value playerWrap::updateAudioClock(const Napi::CallbackInfo& info) {
+    int clock = info[0].As<Napi::Number>().Int32Value();
+    player.updateAudioClock(clock);
+    return info.Env().Undefined();
+}
 
 Napi::ThreadSafeFunction tsfn;
-std::thread nativeThread;
+Napi::ThreadSafeFunction packetReadyTsfn;
+thread nativeThread;
+thread packetReadyThread;
 
 Napi::Value update(const Napi::CallbackInfo& info) {
     Napi::Env env = info.Env();
-    tsfn = Napi::ThreadSafeFunction::New(env, info[0].As<Napi::Function>(), "Resource Name", 0, 1, [](Napi::Env) {
+    packetReadyTsfn = Napi::ThreadSafeFunction::New(env, info[0].As<Napi::Function>(), "ready", 0, 1, [](Napi::Env) {
+        packetReadyThread.join();
+    });
+    tsfn = Napi::ThreadSafeFunction::New(env, info[1].As<Napi::Function>(), "Resource Name", 0, 1, [](Napi::Env) {
         nativeThread.join();
+    });
+    packetReadyThread = thread([] {
+        auto callback = [](Napi::Env env, Napi::Function jsCallback) {
+            jsCallback.Call({});
+        };
+        while (true) {
+            printf("ready check\n");
+            if (player.readyToPlay() > 0) {
+                printf("ready check1\n");
+                break;
+            } else {
+                this_thread::sleep_for(chrono::milliseconds(10));
+            }
+        }
+        napi_status status = packetReadyTsfn.BlockingCall(callback);
+        packetReadyTsfn.Release();
     });
     nativeThread = thread([] {
         auto callback = [](Napi::Env env, Napi::Function jsCallback) {
-            player.decodeVideo();
-            player.decodeAudio();
-            jsCallback.Call({
-                Napi::Buffer<uint8_t>::New(env, player.buffer, player.videoBufferSize),
-                Napi::Buffer<uint8_t>::New(env, player.audioBuffer, player.audioBufferSize)
-            });
+            if (player.decodeVideo() > 0) {
+                jsCallback.Call({Napi::Buffer<uint8_t>::New(env, player.buffer, player.videoBufferSize)});
+            }
         };
-        while(true) {
+        while (true) {
             napi_status status = tsfn.BlockingCall(callback);
             if (status != napi_ok) {
                 printf("call failed\n");
@@ -108,6 +131,7 @@ Napi::Object playerWrap::initMethods(Napi::Env env, Napi::Object exports) {
     exports.Set("decodeAudio", Napi::Function::New(env, playerWrap::decodeAudio));
     exports.Set("decodeVideo", Napi::Function::New(env, playerWrap::decodeVideo));
     exports.Set("getInfo", Napi::Function::New(env, playerWrap::getInfo));
+    exports.Set("updateAudioClock", Napi::Function::New(env, playerWrap::updateAudioClock));
 
     exports.Set("update", Napi::Function::New(env, update));
     return exports;

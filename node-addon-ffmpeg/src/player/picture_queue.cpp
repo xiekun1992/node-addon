@@ -65,21 +65,24 @@ void PictureQueue::init(int bufferSize, int queueLength) {
 int PictureQueue::getDecodedFrame(uint8_t** frame, int* size, int* pts) {
 	if (last->next != first) {
 		FrameList* frameList = last->next;
-		if (first->pts >= *pts) {
-			while (*pts > -1) {
-				if (*pts >= frameList->pts || last->next == first) {
-					break;
-				}
-				else {
-					frameList = last->next;
-				}
-			}
+		if (frameList->pts > *pts) {
+			return -1;
+			//while (*pts > -1) {
+			//	if (*pts >= frameList->pts || last->next == first) {
+			//		break;
+			//	}
+			//	else {
+			//		frameList = last->next;
+			//	}
+			//}
 		}
-		*frame = frameList->frame;
-		*size = frameList->size;
-		//*pts = frameList->pts;
-		last = frameList;
-		return 1;
+		if (frameList != NULL) {
+			*frame = frameList->frame;
+			*size = frameList->size;
+			//*pts = frameList->pts;
+			last = frameList;
+			return 1;
+		}
 	}
 	return -1;
 }

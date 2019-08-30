@@ -20,6 +20,7 @@ public:
 	int decodeAudio();
 	int decodeVideo();
 	void updateAudioClock(int timeDelta);
+	int readyToPlay();
 
 	const char* filename = NULL;
 	uint8_t* audioBuffer = NULL;// 每次解码后的音频数据

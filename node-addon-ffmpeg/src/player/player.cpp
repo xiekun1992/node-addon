@@ -199,7 +199,14 @@ void Player::readPacket() {
 	readVideo.join();
 }
 void Player::updateAudioClock(int timeDelta) {
-	audioClock = timeDelta * 1000;
+	audioClock = timeDelta;
+}
+int Player::readyToPlay()
+{
+	if (audioQueue.avail() > 0) {
+		return 1;
+	}
+	return -1;
 }
 int Player::decodeAudio() {
 	if (audioStreamIndex < 0) {
@@ -221,7 +228,7 @@ int Player::decodeAudio() {
 	//}
 	////av_packet_unref(pkt);
 	//av_packet_free(&pkt);
-	int tmp = -1;
+	int tmp = 2147483647;
 	return audioQueue.getDecodedFrame(&audioBuffer, &audioBufferSize, &tmp);
 }
 int Player::decodeVideo() {
