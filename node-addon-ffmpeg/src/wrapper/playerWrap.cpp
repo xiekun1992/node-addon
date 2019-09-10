@@ -113,12 +113,14 @@ Napi::Value update(const Napi::CallbackInfo& info) {
             }
         };
         while (true) {
-            napi_status status = tsfn.BlockingCall(callback);
-            if (status != napi_ok) {
-                printf("call failed\n");
-                break;
-            }
-            this_thread::sleep_for(chrono::milliseconds(10));
+            // if (player.audioClock > 0) {
+                napi_status status = tsfn.BlockingCall(callback);
+                if (status != napi_ok) {
+                    printf("call failed\n");
+                    break;
+                }
+                this_thread::sleep_for(chrono::milliseconds(10));
+            // }
         }
         tsfn.Release();
     });
