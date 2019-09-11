@@ -119,7 +119,7 @@ Napi::Value update(const Napi::CallbackInfo& info) {
                     printf("call failed\n");
                     break;
                 }
-                this_thread::sleep_for(chrono::milliseconds(10));
+                this_thread::sleep_for(chrono::milliseconds(5));
             // }
         }
         tsfn.Release();

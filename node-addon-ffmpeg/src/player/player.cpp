@@ -133,9 +133,11 @@ void Player::readAudioPacketThread() {
 						avcodec_receive_frame(audioCodecCtx, frame);
 						//audioBuffer = (uint8_t*)av_malloc(MAX_AUDIO_FRAME_SIZE * 2);
 						int size = av_samples_get_buffer_size(NULL, frame->channels, frame->nb_samples, audioCodecCtx->sample_fmt, 1) / 2;
-						audioQueue.getReallocEmptyFrame(&audioBuffer, size, pkt->pts);
-						// interleaved 16bit pcm
-						swr_convert(audioConvertCtx, &audioBuffer, MAX_AUDIO_FRAME_SIZE, (const uint8_t * *)frame->data, frame->nb_samples);
+						if (size > 0) {
+							audioQueue.getReallocEmptyFrame(&audioBuffer, size, pkt->pts);
+							// interleaved 16bit pcm
+							swr_convert(audioConvertCtx, &audioBuffer, MAX_AUDIO_FRAME_SIZE, (const uint8_t * *)frame->data, frame->nb_samples);
+						}
 						av_frame_free(&frame);
 					}
 					//audioQueue.put(pkt);
@@ -167,8 +169,8 @@ void Player::readVideoPacketThread() {
 					AVFrame* videoFrameRGB = av_frame_alloc();
 					if (avcodec_send_packet(videoCodecCtx, pkt) >= 0) {
 						avcodec_receive_frame(videoCodecCtx, videoFrame);
-						//printf("%d %d %f %d\n", videoFrame->best_effort_timestamp, videoFrame->pkt_dts, videoFrame->best_effort_timestamp * av_q2d(videoCodecCtx->time_base)
-						//, static_cast<int> (videoFrame->best_effort_timestamp * 1000 * av_q2d(videoCodecCtx->time_base)));
+						//printf("%d %d %f %f\n", videoFrame->best_effort_timestamp, videoFrame->pkt_dts, videoFrame->best_effort_timestamp * av_q2d(videoCodecCtx->time_base)
+						//, videoFrame->best_effort_timestamp * 1000 * av_q2d(videoFmtCtx->streams[videoStreamIndex]->time_base));
 						//videoQueue.getEmptyFrame(&buffer, 0, videoFrame->best_effort_timestamp);
 						videoQueue.getEmptyFrame(&buffer, 0, static_cast<int> (videoFrame->best_effort_timestamp * 1000 * av_q2d(videoFmtCtx->streams[videoStreamIndex]->time_base)));
 						av_image_fill_arrays(videoFrameRGB->data, videoFrameRGB->linesize, buffer, AV_PIX_FMT_RGB24, videoCodecCtx->width, videoCodecCtx->height, 1);
