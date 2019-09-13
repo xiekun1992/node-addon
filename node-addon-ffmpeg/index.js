@@ -147,17 +147,20 @@ function playAudio() {
 
 let ex = {
   // api
-  event: event,
+  on: function() {
+    console.log(arguments)
+    event.on.apply(event, arguments);
+  },
   play,
   pause
 }
 Object.defineProperties(ex, {
-  'duration': {
+  duration: {
     get: function() {
       return info.video.duration || 0;
     }
   },
-  'currentTime': {
+  currentTime: {
     get: function() {
       return info.currentTime || 0;
     }
