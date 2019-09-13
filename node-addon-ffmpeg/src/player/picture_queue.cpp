@@ -114,3 +114,22 @@ int PictureQueue::getReallocEmptyFrame(uint8_t** frame, int size, int pts) {
 int PictureQueue::avail() {
 	return first == last ? 0 : 1;
 }
+int PictureQueue::freeQueue() {
+	if (last != NULL && first != NULL) {
+		FrameList* tmp = last->next;
+
+		while (tmp != last) {
+			first = tmp;
+			tmp = tmp->next;
+			first->next = NULL;
+			av_free(first->frame);
+			free(first);
+		}
+		tmp->next = NULL;
+		av_free(tmp->frame);
+		free(tmp);
+	}
+	last = first = NULL;
+	length = 0;
+	bufferSize = 0;
+}

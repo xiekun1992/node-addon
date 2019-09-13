@@ -5,6 +5,8 @@ Player::~Player() {}
 
 void Player::init(const char* filename) {
 	this->filename = filename;
+	freeMedia();
+
 	if (avformat_open_input(&audioFmtCtx, filename, NULL, NULL) < 0) {
 		throw runtime_error(string("avformat_open_input failed"));
 	}
@@ -197,11 +199,11 @@ void Player::readVideoPacketThread() {
 	}
 }
 void Player::readPacket() {
-	thread readAudio(&Player::readAudioPacketThread, this);
-	thread readVideo(&Player::readVideoPacketThread, this);
+	videoThread = new thread(&Player::readAudioPacketThread, this);
+	audioThread = new thread(&Player::readVideoPacketThread, this);
 
-	readAudio.join();
-	readVideo.join();
+	videoThread->join();
+	audioThread->join();
 }
 void Player::updateAudioClock(int timeDelta) {
 	audioClock = timeDelta;
@@ -217,22 +219,6 @@ int Player::decodeAudio() {
 	if (audioStreamIndex < 0) {
 		return -1;
 	}
-	//AVPacket* pkt = av_packet_alloc();
-	//if (audioQueue.get(pkt) < 0) {
-	//	av_packet_free(&pkt);
-	//	return;
-	//}
-	//if (avcodec_send_packet(audioCodecCtx, pkt) >= 0) {
-	//	AVFrame* frame = av_frame_alloc();
-	//	avcodec_receive_frame(audioCodecCtx, frame);
-	//	audioBuffer = (uint8_t*)av_malloc(MAX_AUDIO_FRAME_SIZE * 2);
-	//	audioBufferSize = av_samples_get_buffer_size(NULL, frame->channels, frame->nb_samples, audioCodecCtx->sample_fmt, 1) / 2;
-	//	// interleaved 16bit pcm
-	//	swr_convert(audioConvertCtx, &audioBuffer, MAX_AUDIO_FRAME_SIZE, (const uint8_t * *)frame->data, frame->nb_samples);
-	//	av_frame_free(&frame);
-	//}
-	////av_packet_unref(pkt);
-	//av_packet_free(&pkt);
 	int tmp = 2147483647;
 	return audioQueue.getDecodedFrame(&audioBuffer, &audioBufferSize, &tmp);
 }
@@ -242,4 +228,35 @@ int Player::decodeVideo() {
 	}
 	int tmp = 0;
 	return videoQueue.getDecodedFrame(&buffer, &tmp, &audioClock);
+}
+void Player::freeMedia() {
+	if (audioCodecCtx != NULL) {
+		// 关闭解码线程
+		audioThread->detach();
+		// 恢复初始状态
+		swr_close(audioConvertCtx);
+		swr_free(&audioConvertCtx);
+		avcodec_free_context(&audioCodecCtx);
+		avformat_close_input(&audioFmtCtx);
+		audioStreamIndex = -1;
+		audioCodec = NULL;
+		audioQueue.freeQueue();
+		audioBuffer = NULL;
+		audioBufferSize = 0;
+		audioClock = 0;
+	}
+	if (videoFmtCtx != NULL) {
+		// 关闭解码线程
+		videoThread->detach();
+		// 恢复初始状态
+		sws_freeContext(swsCtx);
+		avcodec_free_context(&videoCodecCtx);
+		avformat_close_input(&videoFmtCtx);
+		videoStreamIndex = -1;
+		videoCodec = NULL;
+		videoQueue.freeQueue();
+		buffer = NULL;
+		videoBufferSize = 0;
+
+	}
 }

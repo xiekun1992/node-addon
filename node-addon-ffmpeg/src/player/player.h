@@ -21,6 +21,7 @@ public:
 	int decodeVideo();
 	void updateAudioClock(int timeDelta);
 	int readyToPlay();
+	void freeMedia();
 
 	const char* filename = NULL;
 	uint8_t* audioBuffer = NULL;// 每次解码后的音频数据
@@ -44,6 +45,9 @@ private:
 	int videoStreamIndex = -1;
 	
 	//AVFrame* videoFrame = NULL;
-	AVFrame* videoFrameRGB = NULL;
+	//AVFrame* videoFrameRGB = NULL;
 	struct SwsContext* swsCtx = NULL;
+
+	thread *videoThread = NULL;
+	thread *audioThread = NULL;
 };
