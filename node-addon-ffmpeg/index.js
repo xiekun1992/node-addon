@@ -1,9 +1,10 @@
 const ffmpeg = require('./build/Release/ffmpeg.node');
 const EventEmitter = require('events');
+const path = require('path');
 
 const event = new EventEmitter();
 
-let info, videoInitialized = false
+let info = {}, videoInitialized = false
 
 function play(filename) {
   console.log(filename);  // Prints "whoooooooh!"
@@ -62,7 +63,7 @@ function pause() {}
 
 function playAudio() {
   if (info.audio) {
-    let worker = new Worker('./audio-worker.js')
+    let worker = new Worker(path.resolve(__dirname, './src/utils/audio-worker.js'))
 
     let audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     let channels = +info.audio.channels
@@ -82,19 +83,16 @@ function playAudio() {
     let prevSecond = 0;
     let contextTime
     let second
-    let flagEnd
     function check() {
-      
-      // console.log(audioCtx.getOutputTimestamp())
         contextTime = audioCtx.getOutputTimestamp().contextTime
         second = Math.floor(contextTime)
-        // ...... 设置音频时钟
-        // console.log(contextTime)
-        // const interval = Math.floor(1 / (2 * info.video.fps) * (audioCtx.getOutputTimestamp().performanceTime - timeStart))
+        // 设置音频时钟
         let interval = Math.floor((audioCtx.getOutputTimestamp().performanceTime - timeStart))
         // console.log(contextTime, interval)
         ffmpeg.updateAudioClock(interval)
-        progressEl.style.width = contextTime * 1000 / info.video.duration * 100 + '%'
+        info.currentTime = contextTime * 1000;
+        event.emit('progress', info.currentTime);
+        // progressEl.style.width = contextTime * 1000 / info.video.duration * 100 + '%'
         // 根据时间差替换音频缓冲区内的数据
         if (second - prevSecond > 2) {
           worker.postMessage({
@@ -135,27 +133,35 @@ function playAudio() {
       }
     }
 
-    // timer = setTimeout(() => {
-    //   clearTimeout(timer)
-      worker.postMessage({
-        code: 2,
-        bufferLength: length
-      })
-      
-    // }, 1000)
+    worker.postMessage({
+      code: 2,
+      bufferLength: length
+    })
 
     worker.postMessage({
       code: 1,
       dataNeed: length
     })
-    
   }
 }
 
-module.exports = {
-  on: event.on,
-  once: event.once,
-  off: event.off,
+let ex = {
+  // api
+  event: event,
   play,
   pause
 }
+Object.defineProperties(ex, {
+  'duration': {
+    get: function() {
+      return info.video.duration || 0;
+    }
+  },
+  'currentTime': {
+    get: function() {
+      return info.currentTime || 0;
+    }
+  }
+})
+
+module.exports = ex;
