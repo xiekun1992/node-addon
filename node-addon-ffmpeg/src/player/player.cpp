@@ -1,24 +1,28 @@
 ﻿#include "player.h"
 
 Player::Player() {}
-Player::~Player() {}
 
 void Player::init(const char* filename) {
+	printf("Player::init %s\n", filename);
 	this->filename = filename;
 	freeMedia();
 
 	if (avformat_open_input(&audioFmtCtx, filename, NULL, NULL) < 0) {
 		throw runtime_error(string("avformat_open_input failed"));
 	}
+	printf("Player::init avformat_open_input\n");
 	if (avformat_open_input(&videoFmtCtx, filename, NULL, NULL) < 0) {
 		throw runtime_error(string("avformat_open_input failed"));
 	}
+	printf("Player::init avformat_open_input\n");
 	if (avformat_find_stream_info(audioFmtCtx, NULL) < 0) {
 		throw runtime_error(string("avformat_find_stream_info failed"));
 	}
+	printf("Player::init avformat_find_stream_info\n");
 	if (avformat_find_stream_info(videoFmtCtx, NULL) < 0) {
 		throw runtime_error(string("avformat_find_stream_info failed"));
 	}
+	printf("Player::init avformat_find_stream_info\n");
 	for (unsigned int i = 0; i < audioFmtCtx->nb_streams; i++) {
 		if (audioStreamIndex < 0 && audioFmtCtx->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_AUDIO) {
 			audioStreamIndex = i;
@@ -89,8 +93,10 @@ void Player::init(const char* filename) {
 
 		videoQueue.init(videoBufferSize, 20);
 	}
+	printf("Player::init end %s\n", filename);
 }
 map<string, map<string, string>> Player::getInfo() {
+	printf("Player::getInfo\n");
 	map<string, map<string, string>> wrap;
 	if (videoStreamIndex > -1) {
 		map<string, string> vmap;
@@ -121,11 +127,13 @@ map<string, map<string, string>> Player::getInfo() {
 	return wrap;
 }
 void Player::readAudioPacketThread() {
+	printf("Player::readAudioPacketThread\n");
 	if (audioStreamIndex < 0) {
 		return;
 	}
 	while (true) {
-		if (audioQueue.avail() > 0) {
+		if (!suspend && audioQueue.avail() > 0) {
+			//printf("audio thread decoding\n");
 			AVPacket* pkt = av_packet_alloc();
 			if (av_read_frame(audioFmtCtx, pkt) >= 0) {
 				//printf("packet stream_index=%d, audio index=%d, dts=%d\n", pkt->stream_index, audioStreamIndex, pkt->dts);
@@ -159,11 +167,13 @@ void Player::readAudioPacketThread() {
 	}
 }
 void Player::readVideoPacketThread() {
+	printf("Player::readVideoPacketThread\n");
 	if (videoStreamIndex < 0) {
 		return;
 	}
 	while (true) {
-		if (videoQueue.avail() > 0) {
+		if (!suspend && videoQueue.avail() > 0) {
+			//printf("video thread decoding\n");
 			AVPacket* pkt = av_packet_alloc();
 			if (av_read_frame(videoFmtCtx, pkt) >= 0) {
 				if (pkt->stream_index == videoStreamIndex) {
@@ -199,18 +209,22 @@ void Player::readVideoPacketThread() {
 	}
 }
 void Player::readPacket() {
-	videoThread = new thread(&Player::readAudioPacketThread, this);
-	audioThread = new thread(&Player::readVideoPacketThread, this);
+	printf("Player::readPacket\n");
+	resumeReadThread();
+	if (videoThread == NULL && audioThread == NULL) {
+		videoThread = new thread(&Player::readAudioPacketThread, this);
+		audioThread = new thread(&Player::readVideoPacketThread, this);
 
-	videoThread->join();
-	audioThread->join();
+		videoThread->join();
+		audioThread->join();
+	}
 }
 void Player::updateAudioClock(int timeDelta) {
 	audioClock = timeDelta;
 }
 int Player::readyToPlay()
 {
-	if (audioQueue.avail() > 0) {
+	if (audioQueue.avail() == 0) {
 		return 1;
 	}
 	return -1;
@@ -230,33 +244,68 @@ int Player::decodeVideo() {
 	return videoQueue.getDecodedFrame(&buffer, &tmp, &audioClock);
 }
 void Player::freeMedia() {
-	if (audioCodecCtx != NULL) {
+	suspendReadThread();
+	if (audioFmtCtx != NULL) {
+		printf("release audio start\n");
 		// 关闭解码线程
-		audioThread->detach();
+		//if (audioThread != NULL) {
+			//audioThread->detach();
+			//audioThread = NULL;
+		//}
+		printf("release audio thread\n");
 		// 恢复初始状态
-		swr_close(audioConvertCtx);
-		swr_free(&audioConvertCtx);
-		avcodec_free_context(&audioCodecCtx);
-		avformat_close_input(&audioFmtCtx);
 		audioStreamIndex = -1;
-		audioCodec = NULL;
 		audioQueue.freeQueue();
+		printf("release audio queue\n");
+		printf("release audio queue after\n");
 		audioBuffer = NULL;
 		audioBufferSize = 0;
 		audioClock = 0;
+		printf("release audio swr before\n");
+		swr_close(audioConvertCtx);
+		swr_free(&audioConvertCtx);
+		printf("release audio swr\n");
+		avcodec_free_context(&audioCodecCtx);
+		printf("release audio codec ctx\n");
+		avformat_close_input(&audioFmtCtx);
+		printf("release audio formart ctx\n");
+		audioCodec = NULL;
+		audioFmtCtx = NULL;
+		audioCodecCtx = NULL;
+		audioConvertCtx = NULL;
 	}
 	if (videoFmtCtx != NULL) {
+		printf("release video start\n");
 		// 关闭解码线程
-		videoThread->detach();
+		//if (videoThread != NULL) {
+		//	videoThread->detach();s
+		//	videoThread = NULL;
+		//}
+		printf("release video thread\n");
 		// 恢复初始状态
-		sws_freeContext(swsCtx);
-		avcodec_free_context(&videoCodecCtx);
-		avformat_close_input(&videoFmtCtx);
 		videoStreamIndex = -1;
-		videoCodec = NULL;
 		videoQueue.freeQueue();
+		printf("release video queue\n");
 		buffer = NULL;
 		videoBufferSize = 0;
-
+		sws_freeContext(swsCtx);
+		printf("release video sws\n");
+		avcodec_free_context(&videoCodecCtx);
+		printf("release video codec ctx\n");
+		avformat_close_input(&videoFmtCtx);
+		printf("release video format ctx\n");
+		videoCodec = NULL;
+		videoFmtCtx = NULL;
+		videoCodecCtx = NULL;
 	}
+}
+
+Player::~Player() {
+
+}
+void Player::suspendReadThread() {
+	suspend = true;
+}
+void Player::resumeReadThread() {
+	suspend = false;
 }

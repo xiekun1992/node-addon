@@ -1,7 +1,7 @@
 #include "picture_queue.h"
 
 //void PictureQueue::init() {
-//	// ´´½¨³¤¶ÈÎª30µÄÑ­»·Á´±í
+//	// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Îª30ï¿½ï¿½Ñ­ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 //	length = 30;
 //	FrameList* frameList = static_cast<FrameList*> (malloc(sizeof(FrameList)));
 //	if (frameList) {
@@ -19,7 +19,7 @@
 //
 //	last->next = first;
 //}
-//// Ö¡Êý¾Ý×ª»»ÓÃ
+//// Ö¡ï¿½ï¿½ï¿½ï¿½×ªï¿½ï¿½ï¿½ï¿½
 //AVFrame* PictureQueue::getDecodedFrame() {
 //	if (last->next != first) {
 //		AVFrame* frame = last->next->frame;
@@ -28,7 +28,7 @@
 //	}
 //	return NULL;
 //}
-//// ½âÂëÏß³Ì·ÅÖÃÖ¡Êý¾ÝÓÃ
+//// ï¿½ï¿½ï¿½ï¿½ï¿½ß³Ì·ï¿½ï¿½ï¿½Ö¡ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 //AVFrame* PictureQueue::getEmptyFrame() {
 //	if (first != last) {
 //		AVFrame* frame = first->frame;
@@ -42,7 +42,7 @@
 //}
 
 void PictureQueue::init(int bufferSize, int queueLength) {
-	// ´´½¨³¤¶ÈÎª30µÄÑ­»·Á´±í
+	// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Îª30ï¿½ï¿½Ñ­ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 	length = queueLength;
 	this->bufferSize = bufferSize;
 	FrameList* frameList = static_cast<FrameList*> (malloc(sizeof(FrameList)));
@@ -61,7 +61,7 @@ void PictureQueue::init(int bufferSize, int queueLength) {
 
 	last->next = first;
 }
-// Ö¡Êý¾Ý×ª»»ÓÃ
+// Ö¡ï¿½ï¿½ï¿½ï¿½×ªï¿½ï¿½ï¿½ï¿½
 int PictureQueue::getDecodedFrame(uint8_t** frame, int* size, int* pts) {
 	if (last->next != first) {
 		FrameList* frameList = last->next;
@@ -86,7 +86,7 @@ int PictureQueue::getDecodedFrame(uint8_t** frame, int* size, int* pts) {
 	}
 	return -1;
 }
-// ½âÂëÏß³Ì·ÅÖÃÖ¡Êý¾ÝÓÃ
+// ï¿½ï¿½ï¿½ï¿½ï¿½ß³Ì·ï¿½ï¿½ï¿½Ö¡ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 int PictureQueue::getEmptyFrame(uint8_t** frame, int size, int pts) {
 	if (first != last) {
 		//printf("%d\n", pts);
@@ -112,9 +112,9 @@ int PictureQueue::getReallocEmptyFrame(uint8_t** frame, int size, int pts) {
 }
 
 int PictureQueue::avail() {
-	return first == last ? 0 : 1;
+	return (first == last && first != NULL) ? 0 : 1;
 }
-int PictureQueue::freeQueue() {
+void PictureQueue::freeQueue() {
 	if (last != NULL && first != NULL) {
 		FrameList* tmp = last->next;
 

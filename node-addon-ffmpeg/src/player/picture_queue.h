@@ -44,5 +44,5 @@ public:
 	int getReallocEmptyFrame(uint8_t** frame, int size, int pts);
 	int getDecodedFrame(uint8_t** frame, int* size, int* pts);
 	int avail();
-	int freeQueue();
+	void freeQueue();
 };

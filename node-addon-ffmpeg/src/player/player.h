@@ -22,6 +22,8 @@ public:
 	void updateAudioClock(int timeDelta);
 	int readyToPlay();
 	void freeMedia();
+	void suspendReadThread();
+	void resumeReadThread();
 
 	const char* filename = NULL;
 	uint8_t* audioBuffer = NULL;// 每次解码后的音频数据
@@ -50,4 +52,5 @@ private:
 
 	thread *videoThread = NULL;
 	thread *audioThread = NULL;
+	bool suspend = false;
 };

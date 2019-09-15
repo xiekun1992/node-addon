@@ -7,7 +7,7 @@ let bufferIndex = 0
 let leftBuffer = new Int16Array(), rightBuffer = new Int16Array()
 let bufferLimit = 256 * 1024
 
-fillBuffer()
+// fillBuffer()
 onmessage = function(event) {
   if (event.data.code == 1) {
     // return;
@@ -37,6 +37,15 @@ onmessage = function(event) {
     fillBuffer()
   } else if (event.data.code == 2) {
     bufferLength = event.data.bufferLength
+    fillBuffer().then(() => {
+      this.postMessage({
+        code: 'worker-ready'
+      })
+    });
+  } else if (event.data.code == 'reset') { // reset
+    leftBuffer = new Int16Array();
+    rightBuffer = new Int16Array();
+    bufferIndex = 0;
   }
 }
 // 初始化
