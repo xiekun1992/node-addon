@@ -120,7 +120,16 @@ function play(filename) {
     ffmpeg.resume();
   }
 }
-function pause() {}
+function pause() {
+  if (audioCtx) {
+    audioCtx.suspend();
+  }
+}
+function resume() {
+  if (audioCtx) {
+    audioCtx.resume();
+  }
+}
 
 function playAudio() {
   if (info.audio) {
@@ -135,7 +144,7 @@ function playAudio() {
     let nowBuffering1 = myAudioBuffer.getChannelData(0, 16, sampleRate);
     let nowBuffering2 = myAudioBuffer.getChannelData(1, 16, sampleRate);
     source = audioCtx.createBufferSource();
-    let timeStart = 0
+    // let timeStart = 0
     source.buffer = myAudioBuffer;
     source.loop = true
     source.connect(audioCtx.destination);
@@ -148,11 +157,13 @@ function playAudio() {
       contextTime = audioCtx.getOutputTimestamp().contextTime
       second = Math.floor(contextTime)
       // 设置音频时钟
-      let interval = Math.floor((audioCtx.getOutputTimestamp().performanceTime - timeStart))
+      // let interval = Math.floor((audioCtx.getOutputTimestamp().performanceTime - timeStart))
       // console.log(contextTime, interval)
-      ffmpeg.updateAudioClock(interval)
-      info.currentTime = contextTime * 1000;
-      event.emit('progress', info.currentTime);
+      info.currentTime = Math.floor(contextTime * 1000);
+      ffmpeg.updateAudioClock(info.currentTime);
+      if (info.currentTime <= info.video.duration) {
+        event.emit('progress', info.currentTime);
+      }
       // progressEl.style.width = contextTime * 1000 / info.video.duration * 100 + '%'
       // 根据时间差替换音频缓冲区内的数据
       if (second - prevSecond > 2) {
@@ -170,7 +181,7 @@ function playAudio() {
         if (!timer) {
           console.log('create audio timer');
           timer = setInterval(check, 10)
-          timeStart = audioCtx.getOutputTimestamp().performanceTime 
+          // timeStart = audioCtx.getOutputTimestamp().performanceTime 
         }
         // if (event.data.audioBufferLeft.length <= 0 && event.data.audioBufferRight.length <= 0) {
         //   clearInterval(timer)
@@ -210,9 +221,10 @@ function playAudio() {
 
 let ex = {
   // api
-  on: function() {
+  on() {
     event.on.apply(event, arguments);
   },
+  resume,
   play,
   pause
 }
