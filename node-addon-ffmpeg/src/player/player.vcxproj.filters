@@ -41,5 +41,8 @@
     <ClInclude Include="picture_queue.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="video_info.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

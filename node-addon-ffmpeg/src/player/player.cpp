@@ -95,36 +95,49 @@ void Player::init(const char* filename) {
 	}
 	printf("Player::init end %s\n", filename);
 }
-map<string, map<string, string>> Player::getInfo() {
+VideoInfo Player::getInfo() {
 	printf("Player::getInfo\n");
-	map<string, map<string, string>> wrap;
+	VideoInfo info;
 	if (videoStreamIndex > -1) {
-		map<string, string> vmap;
-		vmap["fps"] = string(to_string(round(av_q2d(videoFmtCtx->streams[videoStreamIndex]->avg_frame_rate) * 100) / 100));
-		vmap["width"] = string(to_string(videoCodecCtx->width));
-		vmap["height"] = string(to_string(videoCodecCtx->height));
-		vmap["iformatName"] = string(videoFmtCtx->iformat->name);
+		info.video.fps = round(av_q2d(videoFmtCtx->streams[videoStreamIndex]->avg_frame_rate) * 100) / 100;
+		info.video.width = videoCodecCtx->width;
+		info.video.height = videoCodecCtx->height;
+		info.video.iformatName = videoFmtCtx->iformat->name;
 		int64_t duration = videoFmtCtx->duration + (videoFmtCtx->duration <= INT64_MAX - 5000 ? 5000 : 0);
-		vmap["duration"] = string(to_string(duration / 1000));
+		info.video.duration = duration / 1000;
 
 		if (videoFmtCtx->start_time != AV_NOPTS_VALUE) {
-			vmap["start"] = string(to_string(videoFmtCtx->start_time));
+			info.video.start = videoFmtCtx->start_time;
 		}
 		if (videoFmtCtx->bit_rate) {
-			vmap["bitrate"] = string(to_string(videoFmtCtx->bit_rate / 1000));
+			info.video.bitrate = videoFmtCtx->bit_rate / 1000;
 		}
-
-		wrap["video"] = vmap;
 	}
 	if (audioStreamIndex > -1) {
-		map<string, string> amap;
-		amap["sampleRate"] = string(to_string(audioCodecCtx->sample_rate));
-		amap["channels"] = string(to_string(audioCodecCtx->channels));
-		amap["sampleFormat"] = string(to_string(audioCodecCtx->sample_fmt));
+		info.audio.sampleRate = audioCodecCtx->sample_rate;
+		info.audio.channels = audioCodecCtx->channels;
 
-		wrap["audio"] = amap;
+		string sampleFormat[14] = {
+			"AV_SAMPLE_FMT_NONE",
+			"AV_SAMPLE_FMT_U8",          ///< unsigned 8 bits
+			"AV_SAMPLE_FMT_S16",         ///< signed 16 bits
+			"AV_SAMPLE_FMT_S32",         ///< signed 32 bits
+			"AV_SAMPLE_FMT_FLT",         ///< float
+			"AV_SAMPLE_FMT_DBL",         ///< double
+
+			"AV_SAMPLE_FMT_U8P",         ///< unsigned 8 bits, planar
+			"AV_SAMPLE_FMT_S16P",        ///< signed 16 bits, planar
+			"AV_SAMPLE_FMT_S32P",        ///< signed 32 bits, planar
+			"AV_SAMPLE_FMT_FLTP",        ///< float, planar
+			"AV_SAMPLE_FMT_DBLP",        ///< double, planar
+			"AV_SAMPLE_FMT_S64",         ///< signed 64 bits
+			"AV_SAMPLE_FMT_S64P",        ///< signed 64 bits, planar
+
+			"AV_SAMPLE_FMT_NB "          ///< Number of sample formats. DO NOT USE if linking dynamically
+		};
+		info.audio.sampleFormat = sampleFormat[audioCodecCtx->sample_fmt + 1];
 	}
-	return wrap;
+	return info;
 }
 void Player::readAudioPacketThread() {
 	printf("Player::readAudioPacketThread\n");

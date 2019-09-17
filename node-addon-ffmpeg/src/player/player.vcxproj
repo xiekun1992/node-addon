@@ -165,6 +165,7 @@
     <ClInclude Include="packet_queue.h" />
     <ClInclude Include="picture_queue.h" />
     <ClInclude Include="player.h" />
+    <ClInclude Include="video_info.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

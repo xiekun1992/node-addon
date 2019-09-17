@@ -2,6 +2,7 @@
 #include "common.h"
 #include "packet_queue.h"
 #include "picture_queue.h"
+#include "video_info.h"
 
 #define MAX_AUDIO_FRAME_SIZE 192000 // 1 second of 48khz 32bit audio
 
@@ -13,7 +14,7 @@ public:
 
 
 	void init(const char* filename);
-	map<string, map<string, string>> getInfo();
+	VideoInfo getInfo();
 	void readAudioPacketThread();
 	void readVideoPacketThread();
 	void readPacket();

@@ -63,22 +63,22 @@ Napi::Value playerWrap::decodeVideo(const Napi::CallbackInfo& info) {
 }
 Napi::Object playerWrap::getInfo(const Napi::CallbackInfo& info) {
     Napi::Env env = info.Env();
-    map<string, map<string, string>> map = player.getInfo();
+    VideoInfo map = player.getInfo();
     Napi::Object obj = Napi::Object::New(env);
     Napi::Object vobj = Napi::Object::New(env);
     Napi::Object aobj = Napi::Object::New(env);
 
-    vobj.Set("fps", map["video"]["fps"]);
-    vobj.Set("width", map["video"]["width"]);
-    vobj.Set("height", map["video"]["height"]);
-    vobj.Set("iformatName", map["video"]["iformatName"]);
-    vobj.Set("duration", map["video"]["duration"]);
-    vobj.Set("start", map["video"]["start"]);
-    vobj.Set("bitrate", map["video"]["bitrate"]);
+    vobj.Set("fps", Napi::Number::New(env, map.video.fps));
+    vobj.Set("width", Napi::Number::New(env, map.video.width));
+    vobj.Set("height", Napi::Number::New(env, map.video.height));
+    vobj.Set("iformatName", Napi::String::New(env, map.video.iformatName));
+    vobj.Set("duration", Napi::Number::New(env, map.video.duration));
+    vobj.Set("start", Napi::Number::New(env, map.video.start));
+    vobj.Set("bitrate", Napi::Number::New(env, map.video.bitrate));
 
-    aobj.Set("sampleRate", map["audio"]["sampleRate"]);
-    aobj.Set("channels", map["audio"]["channels"]);
-    aobj.Set("sampleFormat", map["audio"]["sampleFormat"]);
+    aobj.Set("sampleRate", Napi::Number::New(env, map.audio.sampleRate));
+    aobj.Set("channels", Napi::Number::New(env, map.audio.channels));
+    aobj.Set("sampleFormat",Napi::String::New(env, map.audio.sampleFormat));
 
     obj.Set("video", vobj);
     obj.Set("audio", aobj);

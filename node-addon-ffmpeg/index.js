@@ -93,7 +93,7 @@ function play(filename) {
       playAudio()
       // initialized = true;
     }, videoData => {
-      console.log('videoData ---------------------')
+      // console.log('videoData ---------------------')
       if (videoData) {
         videoWebGL.texture.image.data = new Uint8Array(videoData);
         videoWebGL.texture.needsUpdate = true;
@@ -149,7 +149,7 @@ function playAudio() {
       second = Math.floor(contextTime)
       // 设置音频时钟
       let interval = Math.floor((audioCtx.getOutputTimestamp().performanceTime - timeStart))
-      console.log(contextTime, interval)
+      // console.log(contextTime, interval)
       ffmpeg.updateAudioClock(interval)
       info.currentTime = contextTime * 1000;
       event.emit('progress', info.currentTime);
@@ -217,15 +217,29 @@ let ex = {
   pause
 }
 Object.defineProperties(ex, {
+  video: {
+    get() {
+      return info.video;
+    },
+    set() {}
+  },
+  audio: {
+    get() {
+      return info.audio;
+    },
+    set() {}
+  },
   duration: {
-    get: function() {
+    get() {
       return info.video.duration || 0;
-    }
+    },
+    set() {}
   },
   currentTime: {
-    get: function() {
+    get() {
       return info.currentTime || 0;
-    }
+    },
+    set() {}
   }
 })
 
