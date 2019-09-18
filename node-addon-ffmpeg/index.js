@@ -10,6 +10,7 @@ let worker
 let audioCtx, length;
 let source
 let timer
+let audioPaused = false;
 
 var videoWebGL = {
   scene: null,
@@ -52,6 +53,7 @@ function stop() {
 function play(filename) {
   // 停止正在播放的视频
   stop()
+  audioPaused = false;
   console.log('stopped...')
   ffmpeg.init(filename)
   info = ffmpeg.getInfo()
@@ -122,12 +124,14 @@ function play(filename) {
 }
 function pause() {
   if (audioCtx) {
+    audioPaused = true;
     audioCtx.suspend();
   }
 }
 function resume() {
   if (audioCtx) {
     audioCtx.resume();
+    audioPaused = false;
   }
 }
 
@@ -229,6 +233,12 @@ let ex = {
   pause
 }
 Object.defineProperties(ex, {
+  paused: {
+    get() {
+      return audioPaused;
+    },
+    set(){}
+  },
   video: {
     get() {
       return info.video;
