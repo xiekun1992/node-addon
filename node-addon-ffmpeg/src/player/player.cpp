@@ -167,9 +167,9 @@ void Player::readAudioPacketThread() {
 				}
 			}
 			else {
-				av_packet_free(&pkt);
-				break;
-				//this_thread::sleep_for(chrono::milliseconds(10));
+				// av_packet_free(&pkt);
+				// break;
+				this_thread::sleep_for(chrono::milliseconds(10));
 			}
 			av_packet_free(&pkt);
 		}
@@ -208,9 +208,9 @@ void Player::readVideoPacketThread() {
 				}
 			}
 			else {
-				av_packet_free(&pkt);
-				break;
-				//this_thread::sleep_for(chrono::milliseconds(10));
+				// av_packet_free(&pkt);
+				// break;
+				this_thread::sleep_for(chrono::milliseconds(10));
 			}
 			// 使用av_free_packet会有内存泄漏大约一分钟5M
 			av_packet_free(&pkt);
