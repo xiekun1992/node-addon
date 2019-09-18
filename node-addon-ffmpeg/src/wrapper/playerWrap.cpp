@@ -113,7 +113,7 @@ Napi::Value playerWrap::update(const Napi::CallbackInfo& info) {
                     // break;
                     napi_status status = packetReadyTsfn.BlockingCall(callback);
                     checkAudio = false;
-                    audioCheckInterval = 10 * 1000;
+                    // audioCheckInterval = 10 * 1000;
                     if (status != napi_ok) {
                         printf("audio loop call failed\n");
                         break;
@@ -166,7 +166,7 @@ Napi::Value playerWrap::destroy(const Napi::CallbackInfo& info) {
 Napi::Value playerWrap::suspend(const Napi::CallbackInfo& info) {
     checkVideo = false;
     checkAudio = false;
-    audioCheckInterval = 10 * 1000;
+    // audioCheckInterval = 10 * 1000;
     player.suspendReadThread();
     return info.Env().Undefined();
 }
@@ -174,7 +174,7 @@ Napi::Value playerWrap::resume(const Napi::CallbackInfo& info) {
     player.resumeReadThread();
     thread delay = thread([]{
         this_thread::sleep_for(chrono::milliseconds(100));
-        audioCheckInterval = 10;
+        // audioCheckInterval = 10;
         checkAudio = true;
         checkVideo = true;
     });
