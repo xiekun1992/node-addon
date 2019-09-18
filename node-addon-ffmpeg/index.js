@@ -126,12 +126,14 @@ function pause() {
   if (audioCtx) {
     audioPaused = true;
     audioCtx.suspend();
+    event.emit('pause')
   }
 }
 function resume() {
   if (audioCtx) {
     audioCtx.resume();
     audioPaused = false;
+    event.emit('resume')
   }
 }
 
