@@ -178,6 +178,7 @@ Napi::Value playerWrap::resume(const Napi::CallbackInfo& info) {
         checkAudio = true;
         checkVideo = true;
     });
+    delay.join();
     return info.Env().Undefined();
 }
 
