@@ -10,7 +10,7 @@ let worker
 let audioCtx, length;
 let source
 let timer
-let audioPaused = false;
+let audioPaused = false, audioPlaying = false;
 
 var videoWebGL = {
   scene: null,
@@ -30,11 +30,13 @@ function stop() {
   if (!initialized) {
     return ;
   }
+  audioPlaying = false;
   // 关闭webAudio音频上下文和时钟更新、关闭webWorker音频缓冲线程
   clearInterval(timer)
   timer = null;
   if (worker) {
     worker.terminate()
+    worker = null;
     // worker.postMessage({
     //   code: 'reset'
     // });
@@ -42,9 +44,11 @@ function stop() {
   if (source) {
     source.stop();
     source.disconnect();
+    source = null;
   }
   if (audioCtx) {
     audioCtx.close();
+    audioCtx = null;
   }
   ffmpeg.suspend();
   // 关闭c++插件的readPacket后台线程及update视频图像推送线程、调用c++插件关闭ffmpeg解码上下文
@@ -53,6 +57,7 @@ function stop() {
 function play(filename) {
   // 停止正在播放的视频
   stop()
+  audioPlaying = true;
   audioPaused = false;
   console.log('stopped...')
   ffmpeg.init(filename)
@@ -169,6 +174,9 @@ function playAudio() {
       ffmpeg.updateAudioClock(info.currentTime);
       if (info.currentTime <= info.video.duration) {
         event.emit('progress', info.currentTime);
+      } else {
+        stop();
+        event.emit('ended');
       }
       // progressEl.style.width = contextTime * 1000 / info.video.duration * 100 + '%'
       // 根据时间差替换音频缓冲区内的数据
@@ -235,6 +243,12 @@ let ex = {
   pause
 }
 Object.defineProperties(ex, {
+  playing: {
+    get() {
+      return audioPlaying;
+    },
+    set(){}
+  },
   paused: {
     get() {
       return audioPaused;
