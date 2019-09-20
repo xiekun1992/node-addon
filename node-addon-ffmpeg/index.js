@@ -8,7 +8,7 @@ let info = {}, videoInitialized = false, initialized = false;
 
 let worker
 let audioCtx, length;
-let source
+let source, gainNode;
 let timer
 let audioPaused = false, audioPlaying = false;
 
@@ -44,6 +44,8 @@ function stop() {
   if (source) {
     source.stop();
     source.disconnect();
+    gainNode.disconnect();
+    gainNode = null;
     source = null;
   }
   if (audioCtx) {
@@ -148,6 +150,7 @@ function playAudio() {
     worker = new Worker(path.resolve(__dirname, './src/utils/audio-worker.js'))
 
     audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    gainNode = audioCtx.createGain();
     let channels = +info.audio.channels
     let sampleRate = +info.audio.sampleRate
     length = 5 * sampleRate // 左右声道各5秒音频缓冲
@@ -158,7 +161,9 @@ function playAudio() {
     // let timeStart = 0
     source.buffer = myAudioBuffer;
     source.loop = true
-    source.connect(audioCtx.destination);
+    // source.connect(audioCtx.destination);
+    source.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
     source.start(0);
 
     let prevSecond = 0;
@@ -243,6 +248,19 @@ let ex = {
   pause
 }
 Object.defineProperties(ex, {
+  volume: {
+    get() {
+      if (audioCtx && gainNode && audioPlaying) {
+        return gainNode.gain.value;
+      }
+    },
+    set(val) {
+      if (audioCtx && gainNode && audioPlaying) {
+        // gainNode.gain.value = val;
+        gainNode.gain.setValueAtTime(val, audioCtx.currentTime);
+      }
+    }
+  },
   playing: {
     get() {
       return audioPlaying;
