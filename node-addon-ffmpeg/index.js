@@ -2,7 +2,7 @@ const ffmpeg = require('./build/Release/ffmpeg.node');
 const EventEmitter = require('events');
 const path = require('path');
 
-const event = new EventEmitter();
+const eventBus = new EventEmitter();
 
 let info = {}, videoInitialized = false, initialized = false;
 
@@ -133,14 +133,14 @@ function pause() {
   if (audioCtx) {
     audioPaused = true;
     audioCtx.suspend();
-    event.emit('pause')
+    eventBus.emit('pause')
   }
 }
 function resume() {
   if (audioCtx) {
     audioCtx.resume();
     audioPaused = false;
-    event.emit('resume')
+    eventBus.emit('resume')
   }
 }
 
@@ -178,10 +178,10 @@ function playAudio() {
       info.currentTime = Math.floor(contextTime * 1000);
       ffmpeg.updateAudioClock(info.currentTime);
       if (info.currentTime <= info.video.duration) {
-        event.emit('progress', info.currentTime);
+        eventBus.emit('progress', info.currentTime);
       } else {
         stop();
-        event.emit('ended');
+        eventBus.emit('ended');
       }
       // progressEl.style.width = contextTime * 1000 / info.video.duration * 100 + '%'
       // 根据时间差替换音频缓冲区内的数据
@@ -199,7 +199,8 @@ function playAudio() {
       if (event.data.code == 3) {
         if (!timer) {
           console.log('create audio timer');
-          timer = setInterval(check, 10)
+          timer = setInterval(check, 10);
+          eventBus.emit('play');
           // timeStart = audioCtx.getOutputTimestamp().performanceTime 
         }
         // if (event.data.audioBufferLeft.length <= 0 && event.data.audioBufferRight.length <= 0) {
@@ -241,7 +242,7 @@ function playAudio() {
 let ex = {
   // api
   on() {
-    event.on.apply(event, arguments);
+    eventBus.on.apply(eventBus, arguments);
   },
   resume,
   play,
