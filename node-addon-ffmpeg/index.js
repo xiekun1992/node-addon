@@ -24,6 +24,18 @@ var videoWebGL = {
   texture: null,
   geometry: null,
   material: null,
+  render(videoData) {
+    if (videoData) {
+      videoWebGL.texture.image.data = new Uint8Array(videoData);
+      videoWebGL.texture.needsUpdate = true;
+    }
+    videoWebGL.renderer.render(videoWebGL.scene, videoWebGL.camera);
+  },
+  renderBlack() {
+    videoWebGL.texture.image.data = new Uint8Array(videoWebGL.width * videoWebGL.height * 3);
+    videoWebGL.texture.needsUpdate = true;
+    videoWebGL.renderer.render(videoWebGL.scene, videoWebGL.camera);
+  }
 };
 
 function stop() {
@@ -102,12 +114,13 @@ function play(filename) {
       playAudio()
       // initialized = true;
     }, videoData => {
+      videoWebGL.render(videoData);
       // console.log('videoData ---------------------')
-      if (videoData) {
-        videoWebGL.texture.image.data = new Uint8Array(videoData);
-        videoWebGL.texture.needsUpdate = true;
-      }
-      videoWebGL.renderer.render(videoWebGL.scene, videoWebGL.camera);
+      // if (videoData) {
+      //   videoWebGL.texture.image.data = new Uint8Array(videoData);
+      //   videoWebGL.texture.needsUpdate = true;
+      // }
+      // videoWebGL.renderer.render(videoWebGL.scene, videoWebGL.camera);
     });
   } else {
     videoWebGL.scene.remove(videoWebGL.cube);
@@ -182,6 +195,7 @@ function playAudio() {
       } else {
         stop();
         eventBus.emit('ended');
+        videoWebGL.renderBlack();
       }
       // progressEl.style.width = contextTime * 1000 / info.video.duration * 100 + '%'
       // 根据时间差替换音频缓冲区内的数据
