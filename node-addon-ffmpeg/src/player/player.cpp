@@ -144,18 +144,20 @@ void Player::readAudioPacketThread() {
 	if (audioStreamIndex < 0) {
 		return;
 	}
+	int idd = 1, sum = 0;
 	while (true) {
 		if (!suspend && audioQueue.avail() > 0) {
 			//printf("audio thread decoding\n");
 			AVPacket* pkt = av_packet_alloc();
 			if (av_read_frame(audioFmtCtx, pkt) >= 0) {
-				//printf("packet stream_index=%d, audio index=%d, dts=%d\n", pkt->stream_index, audioStreamIndex, pkt->dts);
-				if (pkt->stream_index == audioStreamIndex) {
+				if (pkt->stream_index == audioStreamIndex && pkt->dts >= seekTimestamp) {
 					if (avcodec_send_packet(audioCodecCtx, pkt) >= 0) {
 						AVFrame* frame = av_frame_alloc();
 						avcodec_receive_frame(audioCodecCtx, frame);
 						//audioBuffer = (uint8_t*)av_malloc(MAX_AUDIO_FRAME_SIZE * 2);
 						int size = av_samples_get_buffer_size(NULL, frame->channels, frame->nb_samples, audioCodecCtx->sample_fmt, 1) / 2;
+						sum += size;
+						printf("id=%d, sum=%d, dts=%d, size=%d, duration=%d, sample rate=%d, samples=%d, chnnels=%d\n", idd++, sum, pkt->dts, size, frame->pkt_duration, frame->sample_rate, frame->nb_samples, frame->channels);
 						if (size > 0) {
 							audioQueue.getReallocEmptyFrame(&audioBuffer, size, pkt->pts);
 							// interleaved 16bit pcm
@@ -194,9 +196,11 @@ void Player::readVideoPacketThread() {
 					AVFrame* videoFrameRGB = av_frame_alloc();
 					if (avcodec_send_packet(videoCodecCtx, pkt) >= 0) {
 						avcodec_receive_frame(videoCodecCtx, videoFrame);
-						//printf("%d %d %f %f\n", videoFrame->best_effort_timestamp, videoFrame->pkt_dts, videoFrame->best_effort_timestamp * av_q2d(videoCodecCtx->time_base)
-						//, videoFrame->best_effort_timestamp * 1000 * av_q2d(videoFmtCtx->streams[videoStreamIndex]->time_base));
+
+						printf("%d %d %f %f %d\n", videoFrame->best_effort_timestamp, videoFrame->pkt_dts, videoFrame->best_effort_timestamp * av_q2d(videoCodecCtx->time_base)
+						, videoFrame->best_effort_timestamp * 1000 * av_q2d(videoFmtCtx->streams[videoStreamIndex]->time_base), videoFrame->key_frame);
 						//videoQueue.getEmptyFrame(&buffer, 0, videoFrame->best_effort_timestamp);
+
 						videoQueue.getEmptyFrame(&buffer, 0, static_cast<int> (videoFrame->best_effort_timestamp * 1000 * av_q2d(videoFmtCtx->streams[videoStreamIndex]->time_base)));
 						av_image_fill_arrays(videoFrameRGB->data, videoFrameRGB->linesize, buffer, AV_PIX_FMT_RGB24, videoCodecCtx->width, videoCodecCtx->height, 1);
 						struct SwsContext* swsCtx = sws_getContext(videoCodecCtx->width, videoCodecCtx->height, videoCodecCtx->pix_fmt, videoCodecCtx->width, videoCodecCtx->height, AV_PIX_FMT_RGB24, SWS_BILINEAR, NULL, NULL, NULL);
@@ -232,6 +236,10 @@ void Player::readPacket() {
 		audioThread->join();
 	}
 }
+/**
+* 更新音频时钟
+* @param timeDelta 毫秒单位的时间戳
+*/
 void Player::updateAudioClock(int timeDelta) {
 	audioClock = timeDelta;
 }
@@ -321,4 +329,26 @@ void Player::suspendReadThread() {
 }
 void Player::resumeReadThread() {
 	suspend = false;
+}
+// 挂起解码线程后再执行
+int Player::seek(int timestamp) {
+	if (audioFmtCtx == NULL || videoFmtCtx == NULL) {
+		return -1;
+	}
+	int duration = (videoFmtCtx->duration + (videoFmtCtx->duration <= INT64_MAX - 5000 ? 5000 : 0)) / 1000;
+	if (timestamp > duration) {
+		timestamp = duration;
+	}
+	if (av_seek_frame(audioFmtCtx, audioStreamIndex, timestamp, AVSEEK_FLAG_BACKWARD) >= 0 &&
+		av_seek_frame(videoFmtCtx, videoStreamIndex, timestamp, AVSEEK_FLAG_BACKWARD) >= 0) {
+		// 成功检索，重置队列重新读取
+		audioQueue.resetLength();
+		videoQueue.resetLength();
+		seekTimestamp = timestamp;
+	}
+	else {
+		return -1;
+	}
+	//av_rescale_q
+	return 0;
 }

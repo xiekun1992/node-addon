@@ -12,6 +12,7 @@ namespace playerWrap {
     Napi::Value resume(const Napi::CallbackInfo& info);
     Napi::Value update(const Napi::CallbackInfo& info);
     Napi::Value destroy(const Napi::CallbackInfo& info);
+    Napi::Value seek(const Napi::CallbackInfo& info);
 
     Napi::Object initMethods(Napi::Env env, Napi::Object exports);
 

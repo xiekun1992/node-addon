@@ -181,6 +181,20 @@ Napi::Value playerWrap::resume(const Napi::CallbackInfo& info) {
     delay.join();
     return info.Env().Undefined();
 }
+Napi::Value playerWrap::seek(const Napi::CallbackInfo& info) {
+    if (info.Length() < 1) {
+        Napi::Error::New(info.Env(), "expect 1 parameter").ThrowAsJavaScriptException();
+        return Napi::Value();
+    }
+    // 暂停播放
+    // suspend(info);
+
+    int timestamp = info[0].As<Napi::Number>().Int32Value();
+    player.seek(timestamp);
+    // 继续播放
+    // resume(info);
+    return info.Env().Undefined();
+}
 
 Napi::Object playerWrap::initMethods(Napi::Env env, Napi::Object exports) {
     exports.Set("init", Napi::Function::New(env, playerWrap::init));
@@ -194,5 +208,6 @@ Napi::Object playerWrap::initMethods(Napi::Env env, Napi::Object exports) {
     exports.Set("destroy", Napi::Function::New(env, playerWrap::destroy));
     exports.Set("suspend", Napi::Function::New(env, playerWrap::suspend));
     exports.Set("resume", Napi::Function::New(env, playerWrap::resume));
+    exports.Set("seek", Napi::Function::New(env, playerWrap::seek));
     return exports;
 }

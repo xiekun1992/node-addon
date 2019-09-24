@@ -45,4 +45,5 @@ public:
 	int getDecodedFrame(uint8_t** frame, int* size, int* pts);
 	int avail();
 	void freeQueue();
+	void resetLength();
 };

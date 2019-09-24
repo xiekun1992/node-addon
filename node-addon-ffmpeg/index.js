@@ -7,7 +7,7 @@ const eventBus = new EventEmitter();
 let info = {}, videoInitialized = false, initialized = false;
 
 let worker
-let audioCtx, length;
+let audioCtx, length, seekStartTime = 0;
 let source, gainNode;
 let timer
 let audioPaused = false, audioPlaying = false;
@@ -73,6 +73,7 @@ function play(filename) {
   stop()
   audioPlaying = true;
   audioPaused = false;
+  seekStartTime = 0;
   console.log('stopped...')
   ffmpeg.init(filename)
   info = ffmpeg.getInfo()
@@ -180,15 +181,20 @@ function playAudio() {
     source.start(0);
 
     let prevSecond = 0;
+    let prevTimeStamp = 0;
     let contextTime
     let second
     function check() {
       contextTime = audioCtx.getOutputTimestamp().contextTime
-      second = Math.floor(contextTime)
+      second = Math.floor(contextTime * 1000)
       // 设置音频时钟
       // let interval = Math.floor((audioCtx.getOutputTimestamp().performanceTime - timeStart))
-      // console.log(contextTime, interval)
-      info.currentTime = Math.floor(contextTime * 1000);
+      // console.log(contextTime, audioCtx.currentTime)
+      seekStartTime += second - prevTimeStamp;
+      prevTimeStamp = second;
+      // console.log(second, seekStartTime)
+      
+      info.currentTime = seekStartTime;
       ffmpeg.updateAudioClock(info.currentTime);
       if (info.currentTime <= info.video.duration) {
         eventBus.emit('progress', info.currentTime);
@@ -199,10 +205,10 @@ function playAudio() {
       }
       // progressEl.style.width = contextTime * 1000 / info.video.duration * 100 + '%'
       // 根据时间差替换音频缓冲区内的数据
-      if (second - prevSecond > 2) {
+      if (second - prevSecond > 2000) {
         worker.postMessage({
           code: 1,
-          dataNeed: Math.abs(second - prevSecond) * sampleRate
+          dataNeed: Math.abs(second - prevSecond) / 1000 * sampleRate
         })
         prevSecond = second
       }
@@ -213,7 +219,7 @@ function playAudio() {
       if (event.data.code == 3) {
         if (!timer) {
           console.log('create audio timer');
-          timer = setInterval(check, 10);
+          timer = setInterval(check, 10)
           eventBus.emit('play');
           // timeStart = audioCtx.getOutputTimestamp().performanceTime 
         }
@@ -257,6 +263,55 @@ let ex = {
   // api
   on() {
     eventBus.on.apply(eventBus, arguments);
+  },
+  seek(timestamp) {
+    if (audioCtx) {
+      console.log('before suspend')
+      audioPaused = true;
+      // audioCtx.suspend();
+      console.log('before clear')
+      audioPlaying = false;
+      // 关闭webAudio音频上下文和时钟更新、关闭webWorker音频缓冲线程
+      clearInterval(timer)
+      timer = null;
+      if (worker) {
+        worker.terminate()
+        worker = null;
+        // worker.postMessage({
+          //   code: 'reset'
+          // });
+        }
+        if (source) {
+          source.stop();
+          source.disconnect();
+          gainNode.disconnect();
+          gainNode = null;
+          source = null;
+        }
+      if (audioCtx) {
+        audioCtx.close();
+        audioCtx = null;
+      }
+      console.log('after clear')
+      ffmpeg.suspend();
+      
+      eventBus.emit('seeking');
+      console.log('before seek')
+      ffmpeg.seek(timestamp);
+      seekStartTime = timestamp;
+      // ffmpeg.updateAudioClock(timestamp);
+      console.log('before playAudio')
+      // playAudio();
+      
+      console.log('before resume')
+      // audioCtx.resume();
+      ffmpeg.resume();
+      playAudio();
+      console.log('after resume')
+      audioPlaying = true;
+      audioPaused = false;
+      eventBus.emit('seeked');
+    }
   },
   resume,
   play,

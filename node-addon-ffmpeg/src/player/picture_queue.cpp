@@ -133,3 +133,6 @@ void PictureQueue::freeQueue() {
 	length = 0;
 	bufferSize = 0;
 }
+void PictureQueue::resetLength() {
+	first = last->next;
+}

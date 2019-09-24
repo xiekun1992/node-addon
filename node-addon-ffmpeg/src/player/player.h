@@ -25,6 +25,7 @@ public:
 	void freeMedia();
 	void suspendReadThread();
 	void resumeReadThread();
+	int seek(int timestamp);
 
 	const char* filename = NULL;
 	uint8_t* audioBuffer = NULL;// 每次解码后的音频数据
@@ -54,4 +55,6 @@ private:
 	thread *videoThread = NULL;
 	thread *audioThread = NULL;
 	bool suspend = false;
+
+	int seekTimestamp = 0;
 };

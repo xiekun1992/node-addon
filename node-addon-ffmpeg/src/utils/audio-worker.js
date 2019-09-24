@@ -1,5 +1,6 @@
 // debugger
 const ffmpeg = require('../../build/Release/ffmpeg.node')
+console.log('worker init')
 
 let bufferLength
 let bufferIndex = 0
@@ -7,7 +8,6 @@ let bufferIndex = 0
 let leftBuffer = new Int16Array(), rightBuffer = new Int16Array()
 let bufferLimit = 256 * 1024
 
-// fillBuffer()
 onmessage = function(event) {
   if (event.data.code == 1) {
     // return;
@@ -36,8 +36,10 @@ onmessage = function(event) {
     // 补充缓冲区
     fillBuffer()
   } else if (event.data.code == 2) {
+    console.log('worker first read')
     bufferLength = event.data.bufferLength
     fillBuffer().then(() => {
+      console.log('worker ready')
       this.postMessage({
         code: 'worker-ready'
       })
