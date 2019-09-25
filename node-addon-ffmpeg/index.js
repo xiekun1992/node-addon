@@ -265,6 +265,7 @@ let ex = {
     eventBus.on.apply(eventBus, arguments);
   },
   seek(timestamp) {
+    timestamp = Math.floor(timestamp);
     if (audioCtx) {
       console.log('before suspend')
       audioPaused = true;
