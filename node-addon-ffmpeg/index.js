@@ -159,6 +159,7 @@ function resume() {
 }
 
 function playAudio() {
+  if (audioCtx) return ;
   if (info.audio) {
 
     worker = new Worker(path.resolve(__dirname, './src/utils/audio-worker.js'))

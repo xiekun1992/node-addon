@@ -199,8 +199,8 @@ void Player::readVideoPacketThread() {
 						avcodec_receive_frame(videoCodecCtx, videoFrame);
 						//printf("pkt->dts = %d, seekTimestamp = %d\n", (int)(videoFrame->best_effort_timestamp * 1000 * av_q2d(videoFmtCtx->streams[videoStreamIndex]->time_base)), seekTimestamp);
 						if ((int)(videoFrame->best_effort_timestamp * 1000 * av_q2d(videoFmtCtx->streams[videoStreamIndex]->time_base)) >= seekTimestamp) {
-							printf("best_effort_timestamp=%d, pkt_dts=%d, %f %f %d\n", videoFrame->best_effort_timestamp, videoFrame->pkt_dts, videoFrame->best_effort_timestamp * av_q2d(videoCodecCtx->time_base)
-							, videoFrame->best_effort_timestamp * 1000 * av_q2d(videoFmtCtx->streams[videoStreamIndex]->time_base), videoFrame->key_frame);
+							//printf("best_effort_timestamp=%d, pkt_dts=%d, %f %f %d\n", videoFrame->best_effort_timestamp, videoFrame->pkt_dts, videoFrame->best_effort_timestamp * av_q2d(videoCodecCtx->time_base)
+							//, videoFrame->best_effort_timestamp * 1000 * av_q2d(videoFmtCtx->streams[videoStreamIndex]->time_base), videoFrame->key_frame);
 							//videoQueue.getEmptyFrame(&buffer, 0, videoFrame->best_effort_timestamp);
 
 							videoQueue.getEmptyFrame(&buffer, 0, static_cast<int> (videoFrame->best_effort_timestamp * 1000 * av_q2d(videoFmtCtx->streams[videoStreamIndex]->time_base)));
