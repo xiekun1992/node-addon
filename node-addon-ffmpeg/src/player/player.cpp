@@ -38,6 +38,7 @@ void Player::init(const char* filename) {
 			throw runtime_error(string("audio avcodec_open2 failed"));
 		}
 		audioQueue.init(MAX_AUDIO_FRAME_SIZE * 2, 160); // 第二个参数小了会导致声音有卡住的问题
+		//audioQueue.init(MAX_AUDIO_FRAME_SIZE * 2, 20); // 第二个参数小了会导致声音有卡住的问题
 
 		// 音频转换设置
 		uint64_t out_channel_layout = AV_CH_LAYOUT_STEREO;
@@ -157,7 +158,7 @@ void Player::readAudioPacketThread() {
 						//audioBuffer = (uint8_t*)av_malloc(MAX_AUDIO_FRAME_SIZE * 2);
 						int size = av_samples_get_buffer_size(NULL, frame->channels, frame->nb_samples, audioCodecCtx->sample_fmt, 1) / 2;
 						sum += size;
-						printf("id=%d, sum=%d, dts=%d, size=%d, duration=%d, sample rate=%d, samples=%d, chnnels=%d\n", idd++, sum, pkt->dts, size, frame->pkt_duration, frame->sample_rate, frame->nb_samples, frame->channels);
+						//printf("id=%d, sum=%d, dts=%d, size=%d, duration=%d, sample rate=%d, samples=%d, chnnels=%d\n", idd++, sum, pkt->dts, size, frame->pkt_duration, frame->sample_rate, frame->nb_samples, frame->channels);
 						if (size > 0) {
 							audioQueue.getReallocEmptyFrame(&audioBuffer, size, pkt->pts);
 							// interleaved 16bit pcm
@@ -196,19 +197,21 @@ void Player::readVideoPacketThread() {
 					AVFrame* videoFrameRGB = av_frame_alloc();
 					if (avcodec_send_packet(videoCodecCtx, pkt) >= 0) {
 						avcodec_receive_frame(videoCodecCtx, videoFrame);
+						//printf("pkt->dts = %d, seekTimestamp = %d\n", (int)(videoFrame->best_effort_timestamp * 1000 * av_q2d(videoFmtCtx->streams[videoStreamIndex]->time_base)), seekTimestamp);
+						if ((int)(videoFrame->best_effort_timestamp * 1000 * av_q2d(videoFmtCtx->streams[videoStreamIndex]->time_base)) >= seekTimestamp) {
+							printf("best_effort_timestamp=%d, pkt_dts=%d, %f %f %d\n", videoFrame->best_effort_timestamp, videoFrame->pkt_dts, videoFrame->best_effort_timestamp * av_q2d(videoCodecCtx->time_base)
+							, videoFrame->best_effort_timestamp * 1000 * av_q2d(videoFmtCtx->streams[videoStreamIndex]->time_base), videoFrame->key_frame);
+							//videoQueue.getEmptyFrame(&buffer, 0, videoFrame->best_effort_timestamp);
 
-						printf("%d %d %f %f %d\n", videoFrame->best_effort_timestamp, videoFrame->pkt_dts, videoFrame->best_effort_timestamp * av_q2d(videoCodecCtx->time_base)
-						, videoFrame->best_effort_timestamp * 1000 * av_q2d(videoFmtCtx->streams[videoStreamIndex]->time_base), videoFrame->key_frame);
-						//videoQueue.getEmptyFrame(&buffer, 0, videoFrame->best_effort_timestamp);
-
-						videoQueue.getEmptyFrame(&buffer, 0, static_cast<int> (videoFrame->best_effort_timestamp * 1000 * av_q2d(videoFmtCtx->streams[videoStreamIndex]->time_base)));
-						av_image_fill_arrays(videoFrameRGB->data, videoFrameRGB->linesize, buffer, AV_PIX_FMT_RGB24, videoCodecCtx->width, videoCodecCtx->height, 1);
-						struct SwsContext* swsCtx = sws_getContext(videoCodecCtx->width, videoCodecCtx->height, videoCodecCtx->pix_fmt, videoCodecCtx->width, videoCodecCtx->height, AV_PIX_FMT_RGB24, SWS_BILINEAR, NULL, NULL, NULL);
-						sws_scale(swsCtx, (uint8_t const* const*)videoFrame->data, videoFrame->linesize, 0, videoCodecCtx->height, videoFrameRGB->data, videoFrameRGB->linesize);
-						sws_freeContext(swsCtx);
+							videoQueue.getEmptyFrame(&buffer, 0, static_cast<int> (videoFrame->best_effort_timestamp * 1000 * av_q2d(videoFmtCtx->streams[videoStreamIndex]->time_base)));
+							av_image_fill_arrays(videoFrameRGB->data, videoFrameRGB->linesize, buffer, AV_PIX_FMT_RGB24, videoCodecCtx->width, videoCodecCtx->height, 1);
+							struct SwsContext* swsCtx = sws_getContext(videoCodecCtx->width, videoCodecCtx->height, videoCodecCtx->pix_fmt, videoCodecCtx->width, videoCodecCtx->height, AV_PIX_FMT_RGB24, SWS_BILINEAR, NULL, NULL, NULL);
+							sws_scale(swsCtx, (uint8_t const* const*)videoFrame->data, videoFrame->linesize, 0, videoCodecCtx->height, videoFrameRGB->data, videoFrameRGB->linesize);
+							sws_freeContext(swsCtx);
+						}
+						av_frame_free(&videoFrameRGB);
+						av_frame_free(&videoFrame);
 					}
-					av_frame_free(&videoFrameRGB);
-					av_frame_free(&videoFrame);
 				}
 			}
 			else {
@@ -339,8 +342,9 @@ int Player::seek(int timestamp) {
 	if (timestamp > duration) {
 		timestamp = duration;
 	}
-	if (av_seek_frame(audioFmtCtx, audioStreamIndex, timestamp, AVSEEK_FLAG_BACKWARD) >= 0 &&
-		av_seek_frame(videoFmtCtx, videoStreamIndex, timestamp, AVSEEK_FLAG_BACKWARD) >= 0) {
+	printf("timestamp = %d, video ts = %ld, audio ts = %ld\n", timestamp, (int)(timestamp / 1000 / av_q2d(videoFmtCtx->streams[videoStreamIndex]->time_base)), (int)(timestamp / 1000 / av_q2d(audioFmtCtx->streams[audioStreamIndex]->time_base)));
+	if (av_seek_frame(audioFmtCtx, audioStreamIndex, (int)(timestamp / 1000 / av_q2d(audioFmtCtx->streams[audioStreamIndex]->time_base)), AVSEEK_FLAG_BACKWARD) >= 0 &&
+		av_seek_frame(videoFmtCtx, videoStreamIndex, (int)(timestamp / 1000 / av_q2d(videoFmtCtx->streams[videoStreamIndex]->time_base)), AVSEEK_FLAG_BACKWARD) >= 0) {
 		// 成功检索，重置队列重新读取
 		audioQueue.resetLength();
 		videoQueue.resetLength();
