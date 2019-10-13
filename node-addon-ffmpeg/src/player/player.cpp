@@ -272,6 +272,7 @@ int Player::decodeVideo() {
 }
 void Player::freeMedia() {
 	suspendReadThread();
+	videoDecodePrevTimestamp = seekTimestamp = 0;
 	if (audioFmtCtx != NULL) {
 		printf("release audio start\n");
 		// 关闭解码线程
