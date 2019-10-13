@@ -1,46 +1,5 @@
 #include "picture_queue.h"
 
-//void PictureQueue::init() {
-//	// ��������Ϊ30��ѭ������
-//	length = 30;
-//	FrameList* frameList = static_cast<FrameList*> (malloc(sizeof(FrameList)));
-//	if (frameList) {
-//		frameList->frame = av_frame_alloc();
-//		first = last = frameList;
-//	}
-//	for (int i = 1; i < length; i++) {
-//		FrameList* frameList = static_cast<FrameList*> (malloc(sizeof(FrameList)));
-//		if (frameList) {
-//			frameList->frame = av_frame_alloc();
-//			last->next = frameList;
-//			last = frameList;
-//		}
-//	}
-//
-//	last->next = first;
-//}
-//// ֡����ת����
-//AVFrame* PictureQueue::getDecodedFrame() {
-//	if (last->next != first) {
-//		AVFrame* frame = last->next->frame;
-//		last = last->next;
-//		return frame;
-//	}
-//	return NULL;
-//}
-//// �����̷߳���֡������
-//AVFrame* PictureQueue::getEmptyFrame() {
-//	if (first != last) {
-//		AVFrame* frame = first->frame;
-//		first = first->next;
-//		return frame;
-//	}
-//	return NULL;
-//}
-//int PictureQueue::avail() {
-//	return first == last ? 0 : 1;
-//}
-
 void PictureQueue::init(int bufferSize, int queueLength) {
 	// ��������Ϊ30��ѭ������
 	length = queueLength;
@@ -66,15 +25,8 @@ int PictureQueue::getDecodedFrame(uint8_t** frame, int* size, int* pts) {
 	if (last->next != first) {
 		FrameList* frameList = last->next;
 		if (frameList->pts > *pts) {
+			//printf("getDecodedFrame frameList->pts=%d, *pts=%d\n", frameList->pts, *pts);
 			return -1;
-			//while (*pts > -1) {
-			//	if (*pts >= frameList->pts || last->next == first) {
-			//		break;
-			//	}
-			//	else {
-			//		frameList = last->next;
-			//	}
-			//}
 		}
 		if (frameList != NULL) {
 			*frame = frameList->frame;
@@ -135,4 +87,25 @@ void PictureQueue::freeQueue() {
 }
 void PictureQueue::resetLength() {
 	first = last->next;
+}
+int PictureQueue::clearQueue() {
+	if (last == NULL) {
+		return -1;
+	}
+	FrameList* tmp = last;
+	if (last->next != NULL) {
+		tmp = last->next;
+		while (tmp != last) {
+			av_free(tmp->frame);
+			tmp->frame = static_cast<uint8_t*> (av_malloc(bufferSize));
+			tmp->size = 0;
+			tmp->pts = 0;
+			tmp = tmp->next;
+		}
+	}
+	av_free(tmp->frame);
+	tmp->frame = static_cast<uint8_t*> (av_malloc(bufferSize));
+	tmp->size = 0;
+	tmp->pts = 0;
+	return 1;
 }

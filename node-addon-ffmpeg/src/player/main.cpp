@@ -10,6 +10,10 @@ int main()
 	//p.freeMedia();
 	p.seek(60000);
 	p.readPacket();
+	p.seek(50000);
+	p.readPacket();
+	p.seek(40000);
+	p.readPacket();
 
 	//p.decodeAudio();
 	//p.decodeAudio();

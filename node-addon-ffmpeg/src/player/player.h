@@ -57,4 +57,5 @@ private:
 	bool suspend = false;
 
 	int seekTimestamp = 0;
+	int videoDecodePrevTimestamp = 0;
 };

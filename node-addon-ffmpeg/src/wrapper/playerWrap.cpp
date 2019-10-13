@@ -132,6 +132,7 @@ Napi::Value playerWrap::update(const Napi::CallbackInfo& info) {
         nativeThread = thread([] {
             auto callback = [](Napi::Env env, Napi::Function jsCallback) {
                 if (player.decodeVideo() > 0) {
+                    printf("nativeThread exec\n");
                     jsCallback.Call({Napi::Buffer<uint8_t>::New(env, player.buffer, player.videoBufferSize)});
                 }
             };

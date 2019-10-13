@@ -116,12 +116,7 @@ function play(filename) {
       // initialized = true;
     }, videoData => {
       videoWebGL.render(videoData);
-      // console.log('videoData ---------------------')
-      // if (videoData) {
-      //   videoWebGL.texture.image.data = new Uint8Array(videoData);
-      //   videoWebGL.texture.needsUpdate = true;
-      // }
-      // videoWebGL.renderer.render(videoWebGL.scene, videoWebGL.camera);
+      console.log('videoData ---------------------')
     });
   } else {
     videoWebGL.scene.remove(videoWebGL.cube);
@@ -218,6 +213,7 @@ function playAudio() {
     worker.onmessage = function(event) {
       // console.log(event.data)
       if (event.data.code == 3) {
+        console.log('receive worker message code 3');
         if (!timer) {
           console.log('create audio timer');
           timer = setInterval(check, 10)
