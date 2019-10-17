@@ -262,6 +262,13 @@ let ex = {
     eventBus.on.apply(eventBus, arguments);
   },
   seek(timestamp) {
+    console.log('seek timestamp', timestamp)
+    if (timestamp > info.video.duration) {
+      timestamp = info.video.duration
+    }
+    if (timestamp < 0) {
+      timestamp = 0
+    }
     timestamp = Math.floor(timestamp);
     if (audioCtx) {
       console.log('before suspend')
@@ -304,8 +311,8 @@ let ex = {
       console.log('before resume')
       // audioCtx.resume();
       ffmpeg.resume();
-      playAudio();
       console.log('after resume')
+      playAudio();
       audioPlaying = true;
       audioPaused = false;
       eventBus.emit('seeked');
