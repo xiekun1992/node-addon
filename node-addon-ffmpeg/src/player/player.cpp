@@ -158,7 +158,7 @@ void Player::readAudioPacketThread() {
 						//audioBuffer = (uint8_t*)av_malloc(MAX_AUDIO_FRAME_SIZE * 2);
 						int size = av_samples_get_buffer_size(NULL, frame->channels, frame->nb_samples, audioCodecCtx->sample_fmt, 1) / 2;
 						sum += size;
-						printf("id=%d, sum=%d, dts=%d, size=%d, duration=%d, sample rate=%d, samples=%d, chnnels=%d\n", idd++, sum, pkt->dts, size, frame->pkt_duration, frame->sample_rate, frame->nb_samples, frame->channels);
+						//printf("id=%d, sum=%d, dts=%d, size=%d, duration=%d, sample rate=%d, samples=%d, chnnels=%d\n", idd++, sum, pkt->dts, size, frame->pkt_duration, frame->sample_rate, frame->nb_samples, frame->channels);
 						if (size > 0) {
 							audioQueue.getReallocEmptyFrame(&audioBuffer, size, pkt->pts);
 							// interleaved 16bit pcm
@@ -231,7 +231,7 @@ void Player::readVideoPacketThread() {
 	}
 }
 void Player::readPacket() {
-	printf("Player::readPacket\n");
+	//printf("Player::readPacket\n");
 	resumeReadThread();
 	if (videoThread == NULL && audioThread == NULL) {
 		videoThread = new thread(&Player::readAudioPacketThread, this);
@@ -341,10 +341,6 @@ void Player::resumeReadThread() {
 int Player::seek(int timestamp) {
 	if (audioFmtCtx == NULL || videoFmtCtx == NULL) {
 		return -1;
-	}
-	int duration = (videoFmtCtx->duration + (videoFmtCtx->duration <= INT64_MAX - 5000 ? 5000 : 0)) / 1000;
-	if (timestamp > duration) {
-		timestamp = duration;
 	}
 	printf("timestamp = %d, video ts = %ld, audio ts = %ld\n", timestamp, (int)(timestamp / 1000 / av_q2d(videoFmtCtx->streams[videoStreamIndex]->time_base)), (int)(timestamp / 1000 / av_q2d(audioFmtCtx->streams[audioStreamIndex]->time_base)));
 	if (av_seek_frame(audioFmtCtx, audioStreamIndex, (int)(timestamp / 1000 / av_q2d(audioFmtCtx->streams[audioStreamIndex]->time_base)), AVSEEK_FLAG_BACKWARD) >= 0 &&
