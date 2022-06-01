@@ -12,6 +12,6 @@
   "dependencies": {
     "node-addon-api": "^1.6.3",
     "node-gyp": "^4.0.0",
-    "sharp": "^0.22.1"
+    "sharp": "^0.30.5"
   }
 }
